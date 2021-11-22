@@ -2,8 +2,10 @@
 .Rhistory
 .Rapp.history
 
-# Session Data files
+# R project Data files
 .RData
+.Rproj
+.Rhistory
 
 # notebook files
 .ipynb_checkpoints
