@@ -1,6 +1,7 @@
 import pandas as pd 
 import config as cfg
 import swat_format
+import os
 from datetime import datetime
 from google.cloud import storage
 from google.cloud import bigquery
@@ -57,6 +58,21 @@ def push_to_bq(df, dataset_nm, table_nm):
     print('Loaded {} rows.'.format(job.output_rows))
 
 
+def read_cio(fpath):
+    """Function to read the file.cio which model run information
+
+    Args:
+        fpath: the path to the file in temp
+    Returns:
+        Dict; storing the number of years and the start year of the model run
+    """
+    
+    cio = pd.read_fwf(fpath, skiprows = 7, header = None, nrows = 4)
+
+    dict_cio = {'n_years' : int(cio.loc[0, 0].split(' ')[0]),
+                'year_start' : int(cio.loc[1, 0].split(' ')[0])}
+    
+    return dict_cio
 
 
 def read_SWAT(fpath, model_period):
@@ -164,6 +180,16 @@ def bq_load(event, context):
 
         if model_period in ['monthly', 'daily']:
 
+            # try reading in file.cio
+            try:
+                path_cio = os.path.split(event['name'])[0] + '/file.cio'
+                temp_cio = write_to_tmp(event['bucket'], path_cio)
+                cio_dict = read_cio(temp_cio)
+                
+            except:
+                print('file.cio is missing from directory. Please add in then re-upload output files.')
+                raise
+
             # write file to temp location and read
             tmp_path = write_to_tmp(event['bucket'], event['name'])
 
@@ -177,7 +203,7 @@ def bq_load(event, context):
             # pull appropriate formatting function from module
             formatter = getattr(swat_format, 'format_' + ftype)
 
-            df = formatter(df, model_period)
+            df = formatter(df, model_period, cio_dict)
         
             # METADATA
             # add in date field
@@ -187,7 +213,7 @@ def bq_load(event, context):
 
             # BQ LOAD
             push_to_bq(df, "healthy_gulf", "SWAT_output_" + ftype)
-        
+
         else:
             print("Model time interval not found in output folder name, add and re-upload")
             return
