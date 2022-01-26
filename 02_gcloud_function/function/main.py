@@ -16,9 +16,7 @@ def write_to_tmp(bucket_nm, file_path):
         String: the location of the file written to temp storage
         e.g. 'tmp/file_name'
     """
-    
-    # takes a bucket name and file path, writes the file to tmp, and returns the tmp file path
-    
+
     storage_client = storage.Client()
     
     tmp_path = '/tmp/' + file_path.split('/')[-1]
@@ -90,8 +88,7 @@ def read_SWAT(fpath, model_period):
         raise
     
     # read file
-    df = pd.read_fwf(fpath, skiprows = skip_value, header = None, infer_nrows=100000) #, nrows=10000
-
+    df = pd.read_fwf(fpath, skiprows = skip_value, header = None, infer_nrows=100000) 
     # cut off useless column for rsv, rch and sed files
     if (ftype in ['rsv', 'rch', 'sed']):
         df = df.iloc[:, 1:]
