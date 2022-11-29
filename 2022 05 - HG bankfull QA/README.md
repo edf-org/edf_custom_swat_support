@@ -80,17 +80,15 @@ Flood % from USGS shows an uneven distribution, seems to be from the fact that d
 
 *note - some usgs_flood_pct scores are < 0 because of negative gage height records. I’m not entirely sure how this occurs..
 
-![Untitled](figs/flood_pct_distribution - USGS.png)
+![flood_pct_distribution - USGS.png](figs/flood_pct_distribution%20-%20USGS.png)
 
 ********SWAT********
 
 These results show a very different distribution, with a hard skew to 0 and a really long tail.
 
-![Untitled](figs/flood_pct_distribution - swat.png)
+![flood_pct_distribution - swat.png](figs/flood_pct_distribution%20-%20swat.png)
 
-| model_info | SWAT
-floods | USGS
-floods | n_true_positives | precision | recall | mean_flood_pct | mean_flood_pct_at_SWAT_predict |
+| model_info | SWAT floods | USGS floods | n_true_positives | precision | recall | mean_flood_pct | mean_flood_pct_at_SWAT_predict |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Original | 827 | 136 | 45 | 0.054414 | 0.330882 | 0.348572 | 0.469458 |
 | Run032_DepHeyTho | 959 | 136 | 37 | 0.038582 | 0.272059 | 0.34914 | 0.423909 |
@@ -112,8 +110,4 @@ For both SWAT and USGS these metrics are ranked across gages and then compared:
 ![Untitled](figs/rank_metrics/mean_duration.png)
 
 ![Untitled](figs/rank_metrics/n_flood_days.png)
-
-## Regressing flood % values at each site
-
-![Untitled](Bankfull%20QC%20v2%20feff8d79fac9429994c9f3308a55393d/Untitled%205.png)
 
