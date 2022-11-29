@@ -1,0 +1,8 @@
+#> dimensions  : 1884, 2132, 1  (nrow, ncol, value)
+#> resolution  : 100, 100  (x, y)
+#> extent      : 890267.3, 4141995.6, 1103467.3, 4330395.6  (xmin, xmax, ymin, ymax)
+#> origin      : 890267.3, 4330395.6
+#> coord. ref. : NAD83(2011) / Texas South Central (EPSG:6587) 
+#> source      : raster_template.tif 
+#> min value   : 1 
+#> max value   : 4014609
