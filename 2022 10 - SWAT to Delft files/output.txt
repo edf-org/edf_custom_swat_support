@@ -1,0 +1,39 @@
+table-name           'Discharge : 1'
+contents             'regular   '
+location             '215                 '
+time-function        'non-equidistant'
+reference-time       20080815
+time-unit            'minutes'
+interpolation        'linear'
+parameter            'time                '                     unit '[min]'
+parameter            'flux/discharge rate '                     unit '[m3/s]'
+records-in-table     47
+6.7680000e+04  2.7200000e+01
+6.9120000e+04  2.2320000e+01
+7.0560000e+04  9.7630000e+00
+table-name           'Discharge : 1'
+contents             'regular   '
+location             '215                 '
+time-function        'non-equidistant'
+reference-time       20080815
+time-unit            'minutes'
+interpolation        'linear'
+parameter            'time                '                     unit '[min]'
+parameter            'flux/discharge rate '                     unit '[m3/s]'
+records-in-table     47
+6.7680000e+04  2.7200000e+01
+6.9120000e+04  2.2320000e+01
+7.0560000e+04  9.7630000e+00
+table-name           'Discharge : 1'
+contents             'regular   '
+location             '215                 '
+time-function        'non-equidistant'
+reference-time       20080815
+time-unit            'minutes'
+interpolation        'linear'
+parameter            'time                '                     unit '[min]'
+parameter            'flux/discharge rate '                     unit '[m3/s]'
+records-in-table     47
+6.7680000e+04  2.7200000e+01
+6.9120000e+04  2.2320000e+01
+7.0560000e+04  9.7630000e+00
