@@ -6,7 +6,6 @@
 ## Author: Greg Slater 
 ##
 ## Date Created: 2022-11-22
-## ---------------------------
 
 ## load up packages
 
@@ -20,75 +19,161 @@ theme_set(theme_edf())
 # DATA IN ---------------------------------------------------------------
 
 # all facilities data
-fac_all.df <- read_csv("output/facilities/facilities_all_coded_2022-11-23.csv", guess_max = 2000) %>% 
+fac_all.df <- read_csv("output/facilities/facilities_all_coded_2022-12-08.csv", guess_max = 2000) %>% 
   rename(registry_id = REGISTRY_ID)
 
+nrow(fac_all.df)
 
 fac_all.sf <- fac_all.df %>% 
-  filter(!is.na(lat_merge)) %>% 
-  st_as_sf(coords = c('lon_merge', 'lat_merge'), crs=4269) %>% 
-  select(registry_id, latlon_merge_src)
+  filter(!is.na(Latitude)) %>% 
+  st_as_sf(coords = c('Longitude', 'Latitude'), crs=4326) %>% 
+  st_transform(6587) %>% 
+  select(registry_id, fac_src)
+
 
 # parcels data - limited (in QGIS) to just those within 100m of facilities, or with industrial land use
-parc.sf <- st_read("data/parcels/parcels_revised_w_facilities_100m_w_industrial_fix_Nov22.gpkg") %>% 
-  st_transform(4269) %>% 
-  select(Stone_Unique_ID_revised, stat_land_comb = stat_land_)
+parc.sf <- st_read("data/parcels/parcels_revised_facilities100m_industrial_Dec22.gpkg") %>% 
+  st_transform(6587) %>% 
+  select(Stone_Unique_ID_revised, 
+         geo_id_revised = geo_id,
+         stat_land_comb = stat_land_)
 
-parc.df <- parc.sf %>% st_drop_geometry()
+# create df of parcels data
+parc.df <- parc.sf %>% 
+  st_drop_geometry()
 
 nrow(parc.df)
 nrow(distinct(parc.df, Stone_Unique_ID_revised))
 
-# original parcels data
-parc_orig <- st_read("data/LP_processed/Parcels_Revised_lookup_only_v2_fixed_geom.gpkg")
-nrow(parc_orig)
 
 # Lauren's original lookup table - for comparing results
-fac_parc <- read_csv("data/LP_processed/facility_parcel_lookup_2022Jun8.csv")
+f_parc <- read_csv("data/LP_processed/facility_parcel_lookup_2022Jun8.csv") %>% 
+  mutate(registry_stone_id = ifelse(is.na(registry_id), 
+                                    Stone_Unique_ID_revised,
+                                    registry_id))
+
+# count number of facilities and parcels by uncertainty class in original lookup
+f_parc %>% group_by(uncertainty_class) %>% 
+  summarise(fac = n_distinct(registry_id),
+            parc = n_distinct(Stone_Unique_ID_revised),
+            n = n())
 
 
 # JOINING -----------------------------------------------------------------
 
-class_1 <- fac_all.sf %>%
-  st_join(parc.sf %>% filter(stat_land_comb == "F2"),
+# CLASSES 1, 2, AND 3
+
+# intersect facilities and parcels, then flag uncertainty class using the land use type from parcels 
+class_123 <- fac_all.sf %>% 
+  st_join(parc.sf,
           join = st_intersects,
-          left = FALSE)
+          left = FALSE) %>% 
+  mutate(uncertainty_class = case_when(stat_land_comb == "F2" ~ 1,
+                                       stat_land_comb %in% c("C1", "C2", "C3", "C4", "F1") ~ 2,
+                                       TRUE ~ 3)) %>% 
+  st_drop_geometry()
 
-class_1  %>% 
-  group_by(latlon_merge_src) %>% 
-  summarise(reg = n_distinct(registry_id), 
-            stone = n_distinct(Stone_Unique_ID_revised))
+# count results
+class_123 %>% 
+  group_by(fac_src, uncertainty_class) %>% 
+  summarise(facilities = n_distinct(registry_id), 
+            parcels = n_distinct(Stone_Unique_ID_revised))
 
-count(class_1, latlon_merge_src)
-filter(class_1, registry_id == 110000460901)
-filter(fac_parc, registry_id == 110000460901)
-
-filter(fac_parc, registry_id == 110000460910)
-
-st_crs(parc.sf) == st_crs(fac_all.sf)
-
-class_1_dist <- class_1 %>% st_drop_geometry() %>% distinct(registry_id)
-nrow(class_1_dist)
-
-fac_parc %>% 
-  filter(uncertainty_class == 1) %>% 
-  summarise(reg = n_distinct(registry_id), 
-            stone = n_distinct(Stone_Unique_ID_revised))
-  # anti_join(class_1_dist, by = "registry_id") %>% 
-  # distinct(registry_id)
-  # filter(registry_id == 110000460983)
-
-# how many industrial parcels in my parcel dataset?
-parc.sf %>% filter(stat_land_comb == "F2") %>% nrow()
+# list of 1, 2, 3 facilities to join against
+fac_123s <- class_123 %>% 
+  distinct(registry_id)
 
 
-# issue hunting
+# CLASSES 4.1, 4.2, 4.3
 
-#1 - There are ~1,000 parcels in my original data which aren't in the new data
-# original is from limiting the full parcel data to stone_ids which are in her lookup
+# remove all 1, 2, and 3 matches from facilities, buffer 100m and then join to parcels
+class_4 <- fac_all.sf %>% 
+  anti_join(class_123 %>% distinct(registry_id), 
+            by = "registry_id") %>% 
+  st_buffer(100) %>% 
+  st_join(parc.sf,
+          join = st_intersects,
+          left = FALSE) %>% 
+  mutate(uncertainty_class = case_when(stat_land_comb == "F2" ~ 4.1,
+                                       stat_land_comb %in% c("C1", "C2", "C3", "C4", "F1") ~ 4.2,
+                                       TRUE ~ 4.3)) %>% 
+  st_drop_geometry()
 
-# find parcels which are in original but not new restricted parcel data
-parc_orig %>% anti_join(parc, by = "Stone_Unique_ID_revised") %>% select(Stone_Unique_ID_revised)
+# count results
+class_4 %>% 
+  group_by(fac_src, uncertainty_class) %>% 
+  summarise(facilities = n_distinct(registry_id), 
+            parcels = n_distinct(Stone_Unique_ID_revised))
 
-filter(fac_parc, Stone_Unique_ID_revised == 44660)
-filter(fac_parc, registry_id  == 110009313331)
+# combine classes 1-4 to use as exclusion below
+class_1234 <- bind_rows(class_123, class_4)
+
+
+# CLASS 5
+
+# here we just want the remaining industrial parcels which don't have a match already
+
+# take just industrial parcels, remove any with existing class 1-4 matches, add new fields
+class_5 <- parc.df %>% 
+  filter(stat_land_comb == "F2") %>% 
+  anti_join(class_1234 %>% distinct(Stone_Unique_ID_revised),
+            by = "Stone_Unique_ID_revised") %>% 
+  mutate(registry_id = NA,
+         fac_src = NA,
+         uncertainty_class = 5)
+  
+
+# ALL CLASSES
+
+# bind all together and create combined registry_stone_id, for class 5 parcels
+# which don't have a registry_id, and join on the class note from original table
+class_all <- bind_rows(class_1234, class_5) %>% 
+  mutate(registry_stone_id = ifelse(is.na(registry_id), 
+                                    Stone_Unique_ID_revised,
+                                    registry_id)) %>% 
+  inner_join(f_parc %>% distinct(uncertainty_class, note),
+             by = "uncertainty_class")
+
+# export
+# class_all %>% write_csv(paste0("output/facilities/facility_parcel_lookup_", today(), ".csv"))
+
+# save geo file of parcels which are in the lookup
+# parc.sf %>% 
+#   inner_join(class_all %>% distinct(Stone_Unique_ID_revised),
+#              by = "Stone_Unique_ID_revised") %>% 
+#   st_write("output/parcels/parcels_lookup_only_20221208.gpkg")
+
+
+# count all by classes
+class_all %>% 
+  group_by(uncertainty_class) %>%
+  summarise(facilities = n_distinct(registry_id), 
+            parcels = n_distinct(Stone_Unique_ID_revised),
+            n = n())
+
+# comparison of orig lookup table
+f_parc %>% 
+  group_by(uncertainty_class) %>% 
+  summarise(facilities = n_distinct(registry_id), 
+            parcels = n_distinct(Stone_Unique_ID_revised),
+            n = n())
+
+
+
+# check records which don't match between new process and Lauren's original lookup
+
+# in new but not in old
+new_not_old <- class_all %>% 
+  filter(fac_src == "facilities_20220311.csv" | is.na(fac_src)) %>% 
+  anti_join(f_parc, by = c("registry_stone_id", "uncertainty_class")) #%>% 
+  # count(uncertainty_class, stat_land_comb)
+
+# write_csv(new_not_old, "output/facilities/facility_parcel_lookup_new_not_old.csv")
+
+# in old but not in new
+old_not_new <- f_parc %>% 
+  anti_join(class_all, by = c("registry_stone_id", "uncertainty_class")) #%>% 
+  # group_by(uncertainty_class) %>% 
+  # summarise(parcels = n_distinct(Stone_Unique_ID_revised)) %>% copyExcel()
+
+# write_csv(old_not_new, "output/facilities/facility_parcel_lookup_old_not_new.csv")

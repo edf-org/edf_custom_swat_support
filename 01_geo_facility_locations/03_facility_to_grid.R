@@ -21,17 +21,17 @@ theme_set(theme_edf())
 # DATA IN ---------------------------------------------------------------
 
 # Lauren's facility to parcel lookup
-fac_parc <- read_csv("data/LP_processed/facility_parcel_lookup_2022Jun8.csv")
+f_parc <- read_csv("output/facilities/facility_parcel_lookup_2022-12-08.csv")
 
-nrow(fac_parc)
-head(fac_parc)
+nrow(f_parc)
+head(f_parc)
 
 # read in raster template
 rt <- read_stars("data/raster_template/raster_template.tif")
 
 # read in parcels shapefile - these are the 10,278 parcels identified in Lauren's (inital) lookup
 # (this was created by joining the csv in QGIS and exporting only joined parcels, to save reading full file in here)
-parcels_sf <- st_read("data/parcels/Parcels_Revised_lookup_only/Parcels_Revised_lookup_only_v2_fixed_geom.gpkg") %>%
+parcels_sf <- st_read("output/parcels/parcels_lookup_only_20221208.gpkg") %>%
   st_transform(6587)
 
 glimpse(parcels_sf)
@@ -42,27 +42,27 @@ glimpse(parcels_sf)
 # PARCEL LOOKUP FILE
 
 # Lauren's matching quality classes
-fac_parc %>% distinct(uncertainty_class, note)
+f_parc %>% distinct(uncertainty_class, note)
 
 # summarise n records by different IDs, without counting NAs
-fac_parc %>%
+f_parc %>%
   summarise(n = n(),
             registry_id = n_distinct(registry_id[!is.na(registry_id)]),
             geo_id_revised = n_distinct(geo_id_revised[!is.na(geo_id_revised)]),
             Stone_Unique_ID_revised = n_distinct(Stone_Unique_ID_revised[!is.na(geo_id_revised)]))
 
 # check what the highest number of facilities some parcels have matched to them is: 7
-fac_parc %>% 
+f_parc %>% 
   count(Stone_Unique_ID_revised) %>%
   arrange(desc(n))
 
 # check what the highest number of parcels any facility is matched to: 182. Seems very high..
-fac_parc %>% 
+f_parc %>% 
   count(registry_id) %>%
   arrange(desc(n))
 
 # but we can see most with many matches are links to any parcel (4.3) rather than commercial or vacant land (4.2)
-fac_parc %>% 
+f_parc %>% 
   count(registry_id, uncertainty_class) %>%
   arrange(desc(n))
 
@@ -127,12 +127,12 @@ parc_grids_sf <- parcels_sf %>%
 # 3. Join parcel grid polygons to the facility>parcel lookup
 
 # join and also create new `registry_stone_id` field for where the stone parcel id is missing 
-fac_parc_grid_sf <- parc_grids_sf %>%
-  inner_join(fac_parc, by = "Stone_Unique_ID_revised") %>%
+f_parc_grid_sf <- parc_grids_sf %>%
+  inner_join(f_parc, by = "Stone_Unique_ID_revised") %>%
   mutate(registry_stone_id = ifelse(is.na(registry_id), Stone_Unique_ID_revised, registry_id))
 
-glimpse(fac_parc_grid_sf)
-# st_write(fac_parc_grid_sf, "output/spatial/parcel_raster_cells_intersected_facility_joined.gpkg", delete_dsn = TRUE)
+glimpse(f_parc_grid_sf)
+# st_write(f_parc_grid_sf, "output/spatial/parcel_raster_cells_intersected_facility_joined.gpkg", delete_dsn = TRUE)
 
 # 4. Dissolve geometries across facilites, grid_ids and uncertainty_class
 # NB - This is necessary because some facilities are linked to multiple land parcels,
@@ -140,15 +140,15 @@ glimpse(fac_parc_grid_sf)
 # Groupig like this means for any facility, we'll get the grid area covered
 # by any parcels in the same uncertainty class.
 
-fac_parc_grid_dissolved_sf <- fac_parc_grid_sf %>% 
+f_parc_grid_dissolved_sf <- f_parc_grid_sf %>% 
   group_by(registry_stone_id, grid_id, uncertainty_class) %>% 
   summarize()
 
-nrow(fac_parc_grid_dissolved_sf)
-# st_write(fac_parc_grid_dissolved_sf, "output/spatial/parcel_raster_cells_intersected_facility_dissolved.gpkg", delete_dsn = TRUE)
+nrow(f_parc_grid_dissolved_sf)
+# st_write(f_parc_grid_dissolved_sf, "output/spatial/parcel_raster_cells_intersected_facility_dissolved.gpkg", delete_dsn = TRUE)
 
 
-fac_parc_grid_dissolved_sf %>%
+f_parc_grid_dissolved_sf %>%
   st_set_geometry(NULL) %>%
   ungroup() %>% 
   summarise(n_row = n(),
