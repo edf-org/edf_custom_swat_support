@@ -2,7 +2,7 @@
 
 ## Starting point:
 
-`facility_parcel_lookup_2022Jun8.csv` Lauren’s lookup between facilities and their matched land parcels 
+`facility_parcel_lookup_2022-12-08.csv`: Lauren’s lookup between facilities and their matched land parcels 
 
 n rows = 5319
 
@@ -12,18 +12,18 @@ n unique parcels (Stone_Unique_ID_revised) = 4,841
 
 n parcels with no matched facility (industrial land) = 2,333
 
-`Parcels_Revised_lookup_only_v2_fixed_geom.gpkg`  Spatial data for land parcels in Houston area, restricted to only those parcels identified in Lauren’s lookup
+`parcels_lookup_only_20221208.gpkg`. Spatial data for land parcels in Houston area, restricted to only those parcels identified in Lauren’s lookup
 
 Note: there are some instances of overlapping geometries in this data, of two types:
 
-- duplicated, i.e. where identical polygons exist for multiple records. 731 instances in total. These exist because there can be multiple owners recorded for the same land parcel. So where we link a facility to multiple identical parcels we’ll just take the extent of the parcels.
-- overlapping, i.e. where parcels of different sizes sit on top of each other. 236 instances in total. These exist because of more complex ownership aspects, for example where a large parcel might have been split up between owners but the inital overall parcel hasn’t been corrected. In these instances we may be overestimating coverage by taking the extent of all linked parcels, but this overestimation won’t extend beyond the 100m x 100m grid area so the effect shouldn’t be huge.
+- duplicated, i.e. where identical polygons exist for multiple records. These exist because there can be multiple owners recorded for the same land parcel. So where we link a facility to multiple identical parcels we’ll just take the extent of the parcels.
+- overlapping, i.e. where parcels of different sizes sit on top of each other. These exist because of more complex ownership aspects, for example where a large parcel might have been split up between owners but the inital overall parcel hasn’t been corrected. In these instances we may be overestimating coverage by taking the extent of all linked parcels, but this can be controlled to some extent by the uncertainty_class, which will make the quality of matching clear.
 
 ## Process:
 
 1. Intersect parcel shapefile with grids, to get a spatial lookup between *Stone_Unique_ID_revised* and *grid_id.* The diagram below shows two example grid cells (with the *grid_id* in the centre) and the parcels which intersect them, coloured by their parcel identifier (*Stone_Unique_ID_revised*). So parcels which cross multiple grids end up with multiple rows in the table, which also describes the % area of the parcel which is in each grid cell. 
     
-    ![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/11f43d5a-0649-4cf9-8fe0-4ff315e5aa9b/Untitled.png)
+    ![parcel to grid diagram](figs/fig%20-%2003%20parcel%20to%20grid%20diagram.png)
     
     Table of a few example parcel IDs in above data:
     
@@ -37,11 +37,9 @@ Note: there are some instances of overlapping geometries in this data, of two ty
     
     With this method, the parcels are joined to ANY grid cell they intersect with. If necessary we can use the areas to be more discerning about matches.
     
-    I’ve exported the full version of this table as `parcel_grid_lookup.csv`
+    n distinct parcels = 5,469
     
-    n distinct parcels = 4,841
-    
-    n distinct grid cells = 43,064
+    n distinct grid cells = 48,626
     
 2. Join `parcel_grid_lookup` table with `facility_parcel_lookup` (by *Stone_Unique_ID_revised*) to get a table linking the facility (*registry_id*) to grid cells (*grid_id)*.
 3. Create a new identifier which accounts for parcels with no matched facility. *registry_stone_id* is the *registry_id* wherever it exists, else it’s the *Stone_Unique_ID_revised.*

@@ -72,7 +72,7 @@ parcels_sf %>%
   st_set_geometry(NULL) %>%
   summarise(n_row = n(),
             #               n_registry_id = n_distinct(registry_i),
-            n_Stone_Unique_ID_revised = n_distinct(lookup_Stone_Unique_ID_revised))
+            n_Stone_Unique_ID_revised = n_distinct(Stone_Unique_ID_revised))
 
 
 
@@ -110,29 +110,44 @@ parcels_rast_sf <- parcels_rast_grid[,] %>%
   st_as_sf(as_points = FALSE, merge = FALSE)
 
 nrow(parcels_rast_sf)
-# st_write(parcels_rast_sf, "output/spatial/parcel_raster_cell_polys.gpkg")
 
 
 # 2. Intersect raster grid cells (which overlap with parcels) with facility parcels
 
 parc_grids_sf <- parcels_sf %>%
-  select(Stone_Unique_ID_revised = lookup_Stone_Unique_ID_revised) %>%
+  select(Stone_Unique_ID_revised) %>%
   st_intersection(parcels_rast_sf) %>%  
   mutate(parcel_area_grid = as.numeric(st_area(geom)),
          grid_area_pct = parcel_area_grid / 10000)
+
+# count no of parcels and grid cells that have been joined
+parc_grids_sf %>% 
+  st_drop_geometry() %>% 
+  summarise(parcels = n_distinct(Stone_Unique_ID_revised),
+            grids = n_distinct(grid_id),
+            n = n())
+
 
 # write output to check in QGIS
 # st_write(parc_grids_sf, "output/spatial/parcel_raster_cells_intersected.gpkg", delete_dsn = TRUE)
 
 # 3. Join parcel grid polygons to the facility>parcel lookup
 
-# join and also create new `registry_stone_id` field for where the stone parcel id is missing 
 f_parc_grid_sf <- parc_grids_sf %>%
-  inner_join(f_parc, by = "Stone_Unique_ID_revised") %>%
-  mutate(registry_stone_id = ifelse(is.na(registry_id), Stone_Unique_ID_revised, registry_id))
+  inner_join(f_parc, by = "Stone_Unique_ID_revised")
 
 glimpse(f_parc_grid_sf)
-# st_write(f_parc_grid_sf, "output/spatial/parcel_raster_cells_intersected_facility_joined.gpkg", delete_dsn = TRUE)
+
+f_parc_grid_sf %>% 
+  st_drop_geometry() %>% 
+  summarise(parcels = n_distinct(Stone_Unique_ID_revised),
+            grids = n_distinct(grid_id),
+            n = n())
+
+# save 
+# f_parc_grid_sf %>% 
+#   select(-c(fac_src, note, geo_id_revised, parcel_area_grid)) %>% 
+#   st_write("output/spatial/parcel_raster_cells_intersected_facility_joined.gpkg", delete_dsn = TRUE)
 
 # 4. Dissolve geometries across facilites, grid_ids and uncertainty_class
 # NB - This is necessary because some facilities are linked to multiple land parcels,
@@ -149,7 +164,7 @@ nrow(f_parc_grid_dissolved_sf)
 
 
 f_parc_grid_dissolved_sf %>%
-  st_set_geometry(NULL) %>%
+  st_drop_geometry() %>%
   ungroup() %>% 
   summarise(n_row = n(),
             # n_fac = n_distinct(registry_id),
@@ -157,7 +172,25 @@ f_parc_grid_dissolved_sf %>%
             n_reg_stone = n_distinct(registry_stone_id),
             n_grids = n_distinct(grid_id))
 
+f_grid_lookup <- f_parc_grid_dissolved_sf %>% 
+  st_drop_geometry()
 
-parc <- read_csv("data/parcels/parcels_revised_w_facilities_100m_w_industrial_Nov22.csv")
+# count rows, and check table is distinct across all fields 
+nrow(f_grid_lookup)
+nrow(f_grid_lookup) == nrow(f_grid_lookup %>% distinct())
 
-glimpse(parc)
+
+# ADD IN NO-MATCH FACILITIES ----------------------------------------------
+
+# these are 6 facilities which didn't match any parcels, so added just as nearest grid cell
+no_match_facs <- read_csv("data/LP_processed/facilities_missing_parcels.csv") %>%
+  rename(registry_stone_id = registry_id) %>%
+  select(-Previous_Status , -LATITUDE83 , -LONGITUDE83) %>%
+  mutate(uncertainty_class = 6)
+
+# check they're not in the lookup already
+no_match_facs %>% inner_join(f_grid_lookup, by = "registry_stone_id")
+
+f_grid_lookup <- bind_rows(f_grid_lookup, no_match_facs)
+
+f_grid_lookup %>% write_csv(paste0("output/facility_grid_lookup_2.0_", today(), ".csv"))
