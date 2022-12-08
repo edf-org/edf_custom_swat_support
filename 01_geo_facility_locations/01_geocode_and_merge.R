@@ -8,7 +8,7 @@
 ## Author: Greg Slater 
 ##
 ## Date Created: 2022-11-22
-## ---------------------------
+
 
 ## load up packages
 
@@ -33,35 +33,21 @@ fac_orig.df <- read_csv("data/facilities/from RJ/facilities_20220311.csv") %>%
          FAC_REFERENCE = FAC_REFERE,
          LONGITUDE83 = LONGITUDE8,
          COUNTY_NAME = COUNTY_NAM) %>% 
-  mutate(fac_source = "facilities_20220311.csv",
+  mutate(fac_src = "facilities_20220311.csv",
          latlon_src = "facilities_20220311.csv",
          LATITUDE83 = as.double(LATITUDE83),
          LONGITUDE83 = as.double(LONGITUDE83),
          FAC_ACCURACY = as.double(FAC_ACCURACY))
 
-
-# # read in original facilities data and project to NAD83
-# fac_orig.sf <- st_read("data/facilities/facilities_v2021Jul28_HUC8pts/facilities_v2021Jul28_HUC8pts.shp",
-#                        stringsAsFactors = F) %>% 
-#   st_transform(4269) %>% 
-#   rename(REGISTRY_ID = REGISTRY_I,
-#          LOCATION_ADDRESS = LOCATION_A,
-#          PRIMARY_NAME = PRIMARY_NA,
-#          FAC_ACCURACY = FAC_ACCURA,
-#          FAC_REFERENCE = FAC_REFERE,
-#          LONGITUDE83 = LONGITUDE8,
-#          COUNTY_NAME = COUNTY_NAM) %>% 
-#   mutate(edf_source = "facilities_v2021Jul28_HUC8pts.shp",
-#          latlon_merge_src = "facilities_v2021Jul28_HUC8pts.shp",
-#          LATITUDE83 = as.double(LATITUDE83),
-#          LONGITUDE83 = as.double(LONGITUDE83),
-#          FAC_ACCURACY = as.double(FAC_ACCURACY))
-# 
-# fac_orig.df <- fac_orig.sf %>% st_drop_geometry()
+fac_orig.sf <- fac_orig.df %>% 
+  filter(!is.na(Latitude)) %>% 
+  st_as_sf(coords = c("Longitude", "Latitude"), crs=4326, remove = F)
 
 
+# read in new facilities data from Cloelle
 fac_new <- read_csv("data/facilities/PROGbyFRS_uniq_11-21-22.csv")
 
+# study area boundary
 study_area.sf <- st_read("data/study_area_census_dissolve.gpkg") %>% 
   st_transform(4326)
 
@@ -268,48 +254,36 @@ fig_dist <- ggplot(gc_dist_comparison %>%
 ggsave("figs/fig - facility point movement post-geocoding.png", fig_dist, units = "cm", width = 15, height = 7)
 
 
-
 # FORMATTING AND MERGING --------------------------------------------------
 
-
-# NEXT STEPS
-# - restrict results to study area
-# - merge to one file, including distance
-
-
-
-# The geocoded results are in WGS84 - so need to be converted to NAD83 before merging with original data
+# Study area clip
 # --- --- --- ---
 
-# create sf from geocoded results (with WGS84 coords) and re-project to NAD83
-results.sf <- results_wide %>% 
-  filter(geocode_result == "success") %>% 
-  st_as_sf(coords = c("lng", "lat"), crs = 4326) %>% 
-  st_transform(4269)
+# create an sf of results
+gc_results.sf <- results_wide %>% 
+  filter(!is.na(lat)) %>% 
+  st_as_sf(coords = c("lng", "lat"), crs=4326, remove = F)
 
-# extract NAD83 coords from df
-results_4269.df <- results.sf %>%
-  mutate(lng = sf::st_coordinates(.)[,1],
-         lat = sf::st_coordinates(.)[,2]) %>% 
+# clip results to study area by intersecting
+gc_results_clip.sf <- gc_results.sf %>% 
+  st_intersection(study_area.sf, left = F)
+
+gc_results_clip.df <- gc_results_clip.sf %>% 
   st_drop_geometry()
 
-# replace the geocoded lat lng with NAD83 coords
-results_wide_4269 <- results_wide %>% 
-  select(-c(lat, lng)) %>% 
-  left_join(results_4269.df %>% select(REGISTRY_ID, lat, lng), by = "REGISTRY_ID")
-
-
+nrow(gc_results_clip.df)
+nrow(gc_dist_comparison)
 
 # Join geocoded results with other new data
 # --- --- --- ---
 
 # edit names to match original data, or make geocoding source clear
 fac_new_clip_coded <- fac_new_clip %>% 
-  left_join(results_wide_4269, by = "REGISTRY_ID") %>% 
-  mutate(edf_source = "PROGbyFRS_uniq_11-21-22.csv - where registry_id is not in facilities_v2021Jul28_HUC8pts.shp",
-         lat_merge = ifelse(is.na(LATITUDE83), lat, LATITUDE83),
-         lon_merge = ifelse(is.na(LONGITUDE83), lng, LONGITUDE83),
-         latlon_merge_src = ifelse(is.na(LATITUDE83), "Google geocoding API - GS", "PROGbyFRS_uniq_11-21-22.csv")) %>% 
+  inner_join(gc_results_clip.df, by = "REGISTRY_ID") %>% 
+  mutate(fac_src = "PROGbyFRS_uniq_11-21-22.csv",
+         Latitude = lat,
+         Longitude = lng,
+         latlon_src = "Google geocoding API - GS") %>% 
   rename(ZIP_CODE = POSTAL_CODE,
          FAC_ACCURACY = ACCURACY_VALUE,
          FAC_REFERENCE = REF_POINT_DESC,
@@ -320,25 +294,31 @@ fac_new_clip_coded <- fac_new_clip %>%
          GC_geocode_attempt = geocode_attempt,
          GC_lat = lat,
          GC_lng = lng
-         )
+         ) %>% 
+  left_join(gc_dist_comparison %>% select(REGISTRY_ID, distance), by = "REGISTRY_ID") %>% 
+  mutate(distance = as.numeric(distance) / 1000) %>% 
+  rename(fac_orig_new_dist_km = distance)
 
-fac_new_clip_coded %>% count(GC_geocode_attempt, latlon_merge_src)
+fac_new_clip_coded %>% count(GC_geocode_attempt, latlon_src)
+nrow(fac_new_clip_coded)
 
 # create list of common fields between original and new datasets - use for full join
 common_fields <- inner_join(tibble("names" = names(fac_orig.df)),
                             tibble("names" = names(fac_new_clip_coded))) %>% pull(names)
 
-# fac_all.df <- read_csv("output/facilities/facilities_all_coded_2022-11-23.csv", guess_max = 2000)
 
 # join all data
 fac_all.df <- fac_orig.df %>% 
-  full_join(fac_new_clip_coded, by = common_fields) %>% 
-  mutate(lat_merge = ifelse(is.na(lat_merge), GC_lat, lat_merge),
-         lon_merge = ifelse(is.na(lon_merge), GC_lng, lon_merge))
+  full_join(fac_new_clip_coded, by = common_fields) #%>% 
+  # mutate(lat_merge = ifelse(is.na(lat_merge), GC_lat, lat_merge),
+  #        lon_merge = ifelse(is.na(lon_merge), GC_lng, lon_merge))
+
+
 
 # count data and location sources in file to check structure makes sense
-fac_all.df %>% count(edf_source, latlon_merge_src, GC_geocode_attempt, is.na(lat_merge))
+fac_all.df %>% count(fac_src, latlon_src, GC_geocode_attempt, is.na(Latitude))
 
+# how many facilities, and distinct by registry_id?
 nrow(fac_all.df)
 nrow(fac_all.df %>% distinct(REGISTRY_ID))
 
@@ -350,74 +330,29 @@ nrow(fac_orig.df) + nrow(fac_new_clip_coded) == nrow(fac_all.df)
 
 glimpse(fac_all.df)
 
-# Geocoding quirks investigation
-# --- --- --- ---
-
-# take a look at some facilities where the source zip code doesn't match the geocoded
-# from a couple of spot checks these either seem to be instances where the geocoding is fine
-# and the zipcode is the next one along to the source one, or where the geocoding result is 
-# approximate because of poor input information.
-fac_new_clip_coded %>% filter(ZIP_CODE != postal_code) %>% 
-  select(PRIMARY_NAME, FAC_REFERENCE, ZIP_CODE, postal_code, LOCATION_ADDRESS, formatted_address, location_type) %>% view()
-
-glimpse(fac_orig.df)
-
-resp <- geoCode("12585 N BAMMEL HOUSTON 77066")
 
 
-  
-# fac_orig.df <- fac_orig.sf %>%
-#   mutate(lon = sf::st_coordinates(.)[,1],
-#          lat = sf::st_coordinates(.)[,2]) %>% 
-#   st_drop_geometry()
-# 
-# fac_orig.df %>% 
-#   mutate(lat_dif = lon - lon_merge) %>% 
-#   arrange(desc(lat_dif))
+# FACILITY OVERLAPS -------------------------------------------------------
 
-
-# find duplicate points
+# find and count duplicate points in the original data
 
 fac_orig.sf %>% as.data.frame() %>% #glimpse()
   select(REGISTRY_ID, PRIMARY_NAME, LOCATION_ADDRESS, geometry) %>% 
   mutate(geometry = as.character(geometry)) %>% 
   group_by(geometry) %>% 
   mutate(sum = n()) %>% 
-  filter(sum > 1) %>% 
+  # filter(sum > 1) %>% 
   arrange(geometry) %>% 
-  ungroup() %>% count(sum) %>% copyExcel()
-
-80 / 946
-
-fac_new_clip_coded.sf <- fac_new_clip_coded %>%
-  filter(!is.na(lat_merge)) %>% 
-  st_as_sf(coords = c("lon_merge", "lat_merge"), crs = 4269)
+  ungroup() %>% 
+  count(sum) %>% 
+  mutate(pct = n / sum(n)) %>% copyExcel()
 
 
-fac_new_clip_coded.sf %>% as.data.frame() %>% 
-  select(REGISTRY_ID, PRIMARY_NAME, LOCATION_ADDRESS, geometry) %>% 
-  mutate(geometry = as.character(geometry)) %>% 
-  group_by(geometry) %>% 
-  mutate(sum = n()) %>% 
-  filter(sum > 1) %>% 
-  arrange(geometry) %>%
-  ungroup() %>% count(sum)
-
-
-st_join(fac_orig.sf, fac_new_clip_coded.sf, join = st_contains) %>% 
-  st_drop_geometry() %>% 
-  distinct(REGISTRY_ID.x)
-
-
-fac_orig.sf[st_intersects(fac_orig.sf, fac_new_clip_coded.sf), ]
-
-fac_new_clip_coded.sf[which(unlist(st_intersects(fac_orig.sf, fac_new_clip_coded.sf)) == 1)]
-
-66/569
+# find and count duplicate points in the updated data with all facilities
 
 fac_all.sf <- fac_all.df %>%
-  filter(!is.na(lat_merge)) %>% 
-  st_as_sf(coords = c("lon_merge", "lat_merge"), crs = 4269)
+  filter(!is.na(Latitude)) %>% 
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326)
 
 
 fac_all.sf %>% as.data.frame() %>% 
@@ -425,8 +360,37 @@ fac_all.sf %>% as.data.frame() %>%
   mutate(geometry = as.character(geometry)) %>% 
   group_by(geometry) %>% 
   mutate(sum = n()) %>% 
-  filter(sum > 1) %>%
-  arrange(geometry) %>% write_csv("output/facilities/facilities_duplicated_locations.csv")
-  # ungroup() %>% count(sum) %>% copyExcel()
+  # filter(sum > 1) %>%
+  # arrange(geometry) %>% write_csv("output/facilities/facilities_duplicated_locations.csv")
+  ungroup() %>% 
+  count(sum) %>% 
+  mutate(pct = n / sum(n)) #%>% copyExcel()
 
-163/1515
+# count and write to csv, retaining the registry_id
+fac_all.sf %>% as.data.frame() %>% 
+  select(REGISTRY_ID, PRIMARY_NAME, LOCATION_ADDRESS, ZIP_CODE, latlon_src, geometry) %>% 
+  mutate(geometry = as.character(geometry)) %>% 
+  group_by(geometry) %>% 
+  mutate(n_fac_overlaps = n()) %>% 
+  ungroup() %>% 
+  # filter(sum > 1) %>%
+  arrange(desc(n_fac_overlaps), geometry, REGISTRY_ID) %>% 
+  write_csv("output/facilities/facilities_duplicated_locations.csv")
+
+
+fac_all.df %>% 
+  mutate(point_orig = sf::st_linestring(x = matrix(c(LONGITUDE83, Longitude, LATITUDE83, Latitude), 
+                                                   nrow = 2, 
+                                                   ncol = 2)))
+
+fac_all.df$dist_linestring <- sprintf("LINESTRING(%s %s, %s %s)", 
+                                      fac_all.df$LONGITUDE83, 
+                                      fac_all.df$LATITUDE83, 
+                                      fac_all.df$Longitude, 
+                                      fac_all.df$Latitude)
+
+fac_all.df %>% 
+  filter(!is.na(LATITUDE83), !is.na(Latitude)) %>% 
+  write_csv(paste0("output/facilities/facilities_all_coded_wlinestring", today(), ".csv"))
+
+fac_all.df %>% count(latlon_src, is.na(Latitude))
