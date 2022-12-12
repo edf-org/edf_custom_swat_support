@@ -8,20 +8,20 @@ Describe the steps taken to match facility locations to land parcels and flag th
 
 | file name | description |
 | --- | --- |
-| `facilities_all_coded_2022-12-08.csv` | The combined list of all facility locations |
-| `Parcels_Revised_wLookup.gdb` | Geodatabase of land parcels created by Stone Environmental after their processing |
+| `facilities_all_coded_2022-12-08.csv` | The combined list of all 1,244 facilities and their locations. |
+| `Parcels_Revised_wLookup.gdb` | Geodatabase of land parcels created by Stone Environmental after their processing. |
 
 ## Steps
 
-### 1. Reduce size of parcels data
+### 1. Reduce size of land parcel data
 
 This is just to create a smaller, more manageable file to use in R for flagging uncertainty classes.
 
 All land parcels with a stat_land_combined == “F2” or which are within 100m of a facility were exported using QGIS, and saved in the file: `parcels_revised_facilities100m_industrial_Dec22.gpkg`
 
-### 2. Spatial joins of facilities and parcels
+### 2. Spatial joins of facility points and land parcels
 
-The table below describes the definition for each uncertainty class.
+A number of classes have been decided to describe the quality of the match between a facility point, based on a combination of the distance between the facility point and land parcel (either 0 or up to 100m) and the land use of the matched parcel. The table below describes those classes, and the spatial joining itself is broken into steps based on the classes.
 
 | uncertainty_class | parcel land use codes | description |
 | --- | --- | --- |
@@ -33,13 +33,22 @@ The table below describes the definition for each uncertainty class.
 | 4.3 | All other | No direct location match. Only other parcel classes (not industrial, commercial, or vacant) e.g. residential or exempt within 100 m. Facility least likely to be of petrochemical interest and/or most likely to have inaccurate location data. |
 | 5.0 | F2 | Industrial land. No facility points within 100 m. Chemical data will be missing but chemical release potential exists. Will need manual checks if these areas show severe flood risk. |
 
-********************************Matching process********************************
+**Matching process**
 
 - Facility points were directly intersected with the land parcels to find matches of class 1, 2 or 3.
 - Remaining facilities (without a match) were then buffered by 100m, and intersected again with the parcels data to find matches of class 4.1, 4.2, or 4.3
 - Finally, all remaining industrial parcels without a matched facility were flagged as class 5.
 
 This final lookup file is saved as: `output/facilities/facility_parcel_lookup_2022-12-08.csv`.
+
+## Lookup file summary
+
+Five facilities from RJ's input data (`facilities_20220311.csv`) are outside the study area, and one is missing lat & lon data, so the number of remaining facilities that have been matched to parcels is 1,238.
+
+n rows = 6,366
+n unique facilities (registry_id) = 1,238
+n unique parcels (Stone_Unique_ID_revised) = 5,469
+n parcels with no matched facility (industrial land) = 2,486
 
 The table below is a summary of the number of facilities and matched parcels for each uncertainty_class, along with the % increase in facilities from the additions to the facility list.
 

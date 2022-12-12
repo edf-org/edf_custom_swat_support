@@ -29,7 +29,7 @@ head(f_parc)
 # read in raster template
 rt <- read_stars("data/raster_template/raster_template.tif")
 
-# read in parcels shapefile - these are the 10,278 parcels identified in Lauren's (inital) lookup
+# read in parcels shapefile - these are the parcels identified in the facility > parcel lookup file
 # (this was created by joining the csv in QGIS and exporting only joined parcels, to save reading full file in here)
 parcels_sf <- st_read("output/parcels/parcels_lookup_only_20221208.gpkg") %>%
   st_transform(6587)
@@ -48,8 +48,13 @@ f_parc %>% distinct(uncertainty_class, note)
 f_parc %>%
   summarise(n = n(),
             registry_id = n_distinct(registry_id[!is.na(registry_id)]),
+            registry_stone_id = n_distinct(registry_stone_id),
             geo_id_revised = n_distinct(geo_id_revised[!is.na(geo_id_revised)]),
             Stone_Unique_ID_revised = n_distinct(Stone_Unique_ID_revised[!is.na(geo_id_revised)]))
+
+f_parc %>% count(uncertainty_class)
+
+1238+2486
 
 # check what the highest number of facilities some parcels have matched to them is: 7
 f_parc %>% 
@@ -149,7 +154,7 @@ f_parc_grid_sf %>%
 #   select(-c(fac_src, note, geo_id_revised, parcel_area_grid)) %>% 
 #   st_write("output/spatial/parcel_raster_cells_intersected_facility_joined.gpkg", delete_dsn = TRUE)
 
-# 4. Dissolve geometries across facilites, grid_ids and uncertainty_class
+# 4. Dissolve geometries across facilites, grid_ids and uncertainty_class, and calculate area
 # NB - This is necessary because some facilities are linked to multiple land parcels,
 # with the same uncertainty class, and which overlap in the same grid cell.
 # Groupig like this means for any facility, we'll get the grid area covered
@@ -157,10 +162,12 @@ f_parc_grid_sf %>%
 
 f_parc_grid_dissolved_sf <- f_parc_grid_sf %>% 
   group_by(registry_stone_id, grid_id, uncertainty_class) %>% 
-  summarize()
+  summarize() %>% 
+  mutate(grid_area_pct = as.numeric(st_area(geom)) / 10000)
 
 nrow(f_parc_grid_dissolved_sf)
 # st_write(f_parc_grid_dissolved_sf, "output/spatial/parcel_raster_cells_intersected_facility_dissolved.gpkg", delete_dsn = TRUE)
+# f_parc_grid_dissolved_sf <- st_read("output/spatial/parcel_raster_cells_intersected_facility_dissolved.gpkg")
 
 
 f_parc_grid_dissolved_sf %>%
@@ -180,6 +187,8 @@ nrow(f_grid_lookup)
 nrow(f_grid_lookup) == nrow(f_grid_lookup %>% distinct())
 
 
+
+
 # ADD IN NO-MATCH FACILITIES ----------------------------------------------
 
 # these are 6 facilities which didn't match any parcels, so added just as nearest grid cell
@@ -193,4 +202,18 @@ no_match_facs %>% inner_join(f_grid_lookup, by = "registry_stone_id")
 
 f_grid_lookup <- bind_rows(f_grid_lookup, no_match_facs)
 
-f_grid_lookup %>% write_csv(paste0("output/facility_grid_lookup_2.0_", today(), ".csv"))
+# f_grid_lookup %>% write_csv(paste0("output/facility_grid_lookup_2.0_", today(), ".csv"))
+
+
+# counts of lookup file
+f_grid_lookup %>% summarise(rows = n(),
+                            registry_stone_id = n_distinct(registry_stone_id),
+                            grid_id = n_distinct(grid_id))
+
+# count by class 
+f_grid_lookup %>%
+  group_by(uncertainty_class) %>%
+  summarise(n_facilities = n_distinct(registry_stone_id),
+            n_grid_cells = n(),
+            #               mean_area_pct = mean(area_grid_pct),
+            total_area_km_2 = scales::comma(sum((grid_area_pct * 10000)) / 1000000, accuracy = 0.1))
