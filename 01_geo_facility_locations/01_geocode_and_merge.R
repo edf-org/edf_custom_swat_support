@@ -1,5 +1,4 @@
 
-
 ## Purpose of script: 
 ## Create a file of all facility location data for the Healthy Gulf project
 ## by combining data from original file (facilities_v2021Jul28_HUC8pts.shp) with new 
