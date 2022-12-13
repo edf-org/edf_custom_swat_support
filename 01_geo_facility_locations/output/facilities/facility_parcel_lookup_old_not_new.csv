@@ -1,6 +1,35 @@
 registry_id,stat_land_combined,geo_id_revised,Stone_Unique_ID_revised,note,uncertainty_class,registry_stone_id
 110000461107,F2,0600520050001,343139,Direct location match with industrial parcel. Highest confidence of petrochemical interest.,1,110000461107
+110001869443,F1,0410290010268,327798,Direct location match with commercial or vacant land parcel. Could be gas station or legacy facility. May be of petrochemical interest.,2,110001869443
 110005047546,F1,1447880010001,674960,Direct location match with commercial or vacant land parcel. Could be gas station or legacy facility. May be of petrochemical interest.,2,110005047546
+110000460787,B1,1440390000001,1113104,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110000460787
+110000460910,X1,NA,332744,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110000460910
+110000462981,1D1,1005150000669,86236,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110000462981
+110000463212,X1,NA,160788,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110000463212
+110000824671,X1,NA,332744,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110000824671
+110005009454,X1,NA,445450,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110005009454
+110005009454,X1,NA,452668,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110005009454
+110005009454,X1,NA,463596,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110005009454
+110005009454,X1,NA,466893,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110005009454
+110005009454,X1,NA,478312,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110005009454
+110005009454,X1,NA,478943,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110005009454
+110005009454,X1,NA,486649,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110005009454
+110005009454,X1,NA,490803,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110005009454
+110005025418,X1,NA,324563,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110005025418
+110005025418,X2,NA,344884,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110005025418
+110005051139,X1,NA,1122304,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110005051139
+110012183216,1D1,0410030000827,133045,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110012183216
+110013293211,X1,NA,160788,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110013293211
+110031412521,X2,NA,640162,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110031412521
+110033585234,D2,0451880000056,665748,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110033585234
+110035071686,X1,NA,638688,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110035071686
+110037199162,1D1,0451800010074,682629,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110037199162
+110037850974,D2,0642230000006,102398,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110037850974
+110040361783,1D1,0422520000065,961392,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110040361783
+110044232773,1D1,1005150000669,86236,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110044232773
+110064000502,X1,NA,1299981,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110064000502
+110064116264,1D1,1005150000669,86236,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110064116264
+110064116987,X1,NA,332744,"Direct location match with other parcel (not industrial, commercial, or vacant) e.g. residential or exempt. May be of petrochemical interest.",3,110064116987
 NA,F2,0410080030005,72883,Industrial land. No facility points within 100 m. Chemical data will be missing but chemical release potential exists. Will need manual checks if these areas show severe flood risk.,5,72883
 NA,F2,0410320010166,73058,Industrial land. No facility points within 100 m. Chemical data will be missing but chemical release potential exists. Will need manual checks if these areas show severe flood risk.,5,73058
 NA,F2,0410320010195,75997,Industrial land. No facility points within 100 m. Chemical data will be missing but chemical release potential exists. Will need manual checks if these areas show severe flood risk.,5,75997

@@ -21,7 +21,7 @@ theme_set(theme_edf())
 # DATA IN ---------------------------------------------------------------
 
 # Lauren's facility to parcel lookup
-f_parc <- read_csv("output/facilities/facility_parcel_lookup_2022-12-08.csv")
+f_parc <- read_csv("output/facilities/facility_parcel_lookup_2022-12-13.csv")
 
 nrow(f_parc)
 head(f_parc)
@@ -31,7 +31,7 @@ rt <- read_stars("data/raster_template/raster_template.tif")
 
 # read in parcels shapefile - these are the parcels identified in the facility > parcel lookup file
 # (this was created by joining the csv in QGIS and exporting only joined parcels, to save reading full file in here)
-parcels_sf <- st_read("output/parcels/parcels_lookup_only_20221208.gpkg") %>%
+parcels_sf <- st_read("output/parcels/parcels_lookup_only_20221213.gpkg") %>%
   st_transform(6587)
 
 glimpse(parcels_sf)
@@ -54,7 +54,6 @@ f_parc %>%
 
 f_parc %>% count(uncertainty_class)
 
-1238+2486
 
 # check what the highest number of facilities some parcels have matched to them is: 7
 f_parc %>% 
@@ -108,7 +107,7 @@ parcels_rast_grid <- raster_to_df(parcels_rast) %>%
   csv_to_raster("cell_id", "cell_id", rt) %>%
   setNames("grid_id")
 
-# write_stars(parcels_rast_grid, "output/spatial/raster_clipped_to_parcels.tif")
+write_stars(parcels_rast_grid, "output/spatial/raster_clipped_to_parcels.tif")
 
 # extract parcel raster cells as polygons and save as shapefile
 parcels_rast_sf <- parcels_rast_grid[,] %>%
@@ -134,7 +133,7 @@ parc_grids_sf %>%
 
 
 # write output to check in QGIS
-# st_write(parc_grids_sf, "output/spatial/parcel_raster_cells_intersected.gpkg", delete_dsn = TRUE)
+st_write(parc_grids_sf, "output/spatial/parcel_raster_cells_intersected.gpkg", delete_dsn = TRUE)
 
 # 3. Join parcel grid polygons to the facility>parcel lookup
 
@@ -149,9 +148,10 @@ f_parc_grid_sf %>%
             grids = n_distinct(grid_id),
             n = n())
 
-# save 
-# f_parc_grid_sf %>% 
-#   select(-c(fac_src, note, geo_id_revised, parcel_area_grid)) %>% 
+# save - not necessary, but this is useful to inspect the parcel/grid intersections and facility to 
+# parcel links
+# f_parc_grid_sf %>%
+#   select(-c(fac_src, note, geo_id_revised, parcel_area_grid)) %>%
 #   st_write("output/spatial/parcel_raster_cells_intersected_facility_joined.gpkg", delete_dsn = TRUE)
 
 # 4. Dissolve geometries across facilites, grid_ids and uncertainty_class, and calculate area
@@ -160,14 +160,15 @@ f_parc_grid_sf %>%
 # Groupig like this means for any facility, we'll get the grid area covered
 # by any parcels in the same uncertainty class.
 
+# note - this takes a few minutes to run
 f_parc_grid_dissolved_sf <- f_parc_grid_sf %>% 
+  select(-c(fac_src, note, geo_id_revised, parcel_area_grid)) %>%
   group_by(registry_stone_id, grid_id, uncertainty_class) %>% 
-  summarize() %>% 
-  mutate(grid_area_pct = as.numeric(st_area(geom)) / 10000)
+  summarize() 
 
 nrow(f_parc_grid_dissolved_sf)
-# st_write(f_parc_grid_dissolved_sf, "output/spatial/parcel_raster_cells_intersected_facility_dissolved.gpkg", delete_dsn = TRUE)
-# f_parc_grid_dissolved_sf <- st_read("output/spatial/parcel_raster_cells_intersected_facility_dissolved.gpkg")
+st_write(f_parc_grid_dissolved_sf, "output/spatial/parcel_raster_cells_intersected_facility_dissolved.gpkg", delete_dsn = TRUE)
+f_parc_grid_dissolved_sf_orig <- st_read("output/spatial/parcel_raster_cells_intersected_facility_dissolved.gpkg")
 
 
 f_parc_grid_dissolved_sf %>%
@@ -180,7 +181,10 @@ f_parc_grid_dissolved_sf %>%
             n_grids = n_distinct(grid_id))
 
 f_grid_lookup <- f_parc_grid_dissolved_sf %>% 
+  ungroup() %>% 
+  mutate(grid_area_pct = as.numeric(st_area(geom)) / 10000) %>%
   st_drop_geometry()
+
 
 # count rows, and check table is distinct across all fields 
 nrow(f_grid_lookup)
@@ -202,7 +206,8 @@ no_match_facs %>% inner_join(f_grid_lookup, by = "registry_stone_id")
 
 f_grid_lookup <- bind_rows(f_grid_lookup, no_match_facs)
 
-# f_grid_lookup %>% write_csv(paste0("output/facility_grid_lookup_2.0_", today(), ".csv"))
+# save
+f_grid_lookup %>% write_csv(paste0("output/facilities/facility_grid_lookup_2.0_", today(), ".csv"))
 
 
 # counts of lookup file
