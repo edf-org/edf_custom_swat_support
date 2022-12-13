@@ -8,8 +8,8 @@ Describe the data processing carried out in Nov. 2022 to add in further faciliti
 
 | Filename | short name | Description | n facilities |
 | --- | --- | --- | --- |
-| facilities_20220311.csv | facilities_orig | Facilities data after a few inital stages of processing. Namely, combining from different data sources, and geocoding steps carried out by RJ at TAMU. Improved location data for facilities (saved in the ‘Latitude’ and ‘Longitude’ fields) was created by running all facility addresses through Google’s geocoding API | 946 unique REGISTRY_ID |
-| PROGbyFRS_uniq_11-21-22.csv | facilities_new | An additional list of facilities sourced by Cloelle. There is some overlap with the inital data | 1402 unique REGISTRY_ID |
+| `facilities_20220311.csv` | facilities_orig | Facilities data after a few inital stages of processing. Namely, combining from different data sources, and geocoding steps carried out by RJ at TAMU. Improved location data for facilities (saved in the ‘Latitude’ and ‘Longitude’ fields) was created by running all facility addresses through Google’s geocoding API | 946 unique REGISTRY_ID |
+| `PROGbyFRS_uniq_11-21-22.csv` | facilities_new | An additional list of facilities sourced by Cloelle. There is some overlap with the inital data | 1402 unique REGISTRY_ID |
 
 ## Steps
 
@@ -57,7 +57,7 @@ Limiting the geocoded results to those just within the study area gives **298 fa
 
 The new lat & lon data from the geocoding was added into the facilties data for `facilities_new_clip`, and then this data was combined with `facilities_orig` to give a total of **1,244 facilities**.
 
-This extended list is saved as: `output/facilities/facilities_all_coded_2022-12-07.csv`
+This extended list is saved as: `output/facilities/facilities_all_coded_2022-12-08.csv`
 
 ********************Key fields********************
 

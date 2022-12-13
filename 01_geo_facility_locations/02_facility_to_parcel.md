@@ -17,7 +17,7 @@ Describe the steps taken to match facility locations to land parcels and flag th
 
 This is just to create a smaller, more manageable file to use in R for flagging uncertainty classes.
 
-All land parcels with a stat_land_combined == “F2” or which are within 100m of a facility were exported using QGIS, and saved in the file: `parcels_revised_facilities100m_industrial_Dec22.gpkg`
+All land parcels with a stat_land_combined == “F2” or which are within 100m of a facility were exported using QGIS, and saved in the file: `data/parcels/parcels_revised_facilities100m_industrial_Dec22.gpkg`
 
 ### 2. Spatial joins of facility points and land parcels
 
@@ -69,9 +69,8 @@ The table below is a summary of the number of facilities and matched parcels for
 | 4.3 | 177 | 1186 | 1393 | 42% |
 | 5 | NA | 2486 | 2486 | 0% |
 
-Note: the no. of records per class is larger than the count of facilities and parcels as the same facility can be matched to multiple parcels within a class (due to overlapping parcels, or the effect of the facility buffering for class 4), or the same parcel can be matched to multiple parcels (due to different facility records with identical or close locations, or the effect of facility buffering for class 4).
+Note: the no. of records per class is larger than the count of facilities because of the scenarios described above where a facility can be matched to multiple parcels.
 
-The same facility can have multiple matches across classes 1-3, or 4.1-4.3, but no facilities are in both of these groups.
 
 ## Comparison with original matching
 
