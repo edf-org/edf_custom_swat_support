@@ -60,11 +60,11 @@ The diagram below shows two example grid cells (with the *grid_id* in the centre
 
 `output/facilities/facility_grid_lookup_2.0_2022-12-08.csv`
 
-n rows = 94,976
+n rows = 93,086
 
 n distinct facilities or industrial parcels (*registry_stone_id*) = 3,730 (1,238 facilities + 2,486 industrial parcels + 6 facilities not matched to parcels)
 
-n distinct grid cells = 48,269
+n distinct grid cells = 48,626
 
 This table describes:
 

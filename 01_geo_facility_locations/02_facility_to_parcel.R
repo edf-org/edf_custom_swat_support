@@ -58,6 +58,19 @@ f_parc %>% group_by(uncertainty_class) %>%
             parc = n_distinct(Stone_Unique_ID_revised),
             n = n())
 
+# checking dupes in classes 1-3 in original lookup
+f_parc %>% filter(uncertainty_class < 4) %>% distinct(registry_id) %>% nrow()
+
+f_parc %>% 
+  filter(uncertainty_class < 4) %>% 
+  distinct(registry_id, uncertainty_class) %>% 
+  count(registry_id) %>% 
+  filter(n>1) %>% arrange(desc(n))
+
+
+f_parc %>% filter(registry_id == 110000460787)
+nrow(f_parc)
+
 
 # JOINING -----------------------------------------------------------------
 
@@ -73,14 +86,27 @@ class_123 <- fac_all.sf %>%
                                        TRUE ~ 3)) %>% 
   st_drop_geometry()
 
+
+# join to minimum uncertainty class to get rid of duplicates across classes
+class_123_min <- class_123 %>% 
+  group_by(registry_id) %>% 
+  summarise(uncertainty_class = min(uncertainty_class)) %>% 
+  inner_join(class_123, by = c("registry_id", "uncertainty_class"))
+
+# is registry id unique across uncertainty classes?
+distinct(class_123_min, registry_id) %>% 
+  nrow() == distinct(class_123_min, registry_id, uncertainty_class) %>% 
+  nrow()
+
 # count results
-class_123 %>% 
+class_123_min %>% 
   group_by(fac_src, uncertainty_class) %>% 
   summarise(facilities = n_distinct(registry_id), 
             parcels = n_distinct(Stone_Unique_ID_revised))
 
+
 # list of 1, 2, 3 facilities to join against
-fac_123s <- class_123 %>% 
+fac_123s <- class_123_min %>% 
   distinct(registry_id)
 
 
@@ -106,7 +132,7 @@ class_4 %>%
             parcels = n_distinct(Stone_Unique_ID_revised))
 
 # combine classes 1-4 to use as exclusion below
-class_1234 <- bind_rows(class_123, class_4)
+class_1234 <- bind_rows(class_123_min, class_4)
 
 
 # CLASS 5
@@ -141,7 +167,7 @@ class_all <- bind_rows(class_1234, class_5) %>%
 # parc.sf %>% 
 #   inner_join(class_all %>% distinct(Stone_Unique_ID_revised),
 #              by = "Stone_Unique_ID_revised") %>% 
-#   st_write("output/parcels/parcels_lookup_only_20221208.gpkg")
+#   st_write("output/parcels/parcels_lookup_only_20221213.gpkg", delete_dsn = TRUE)
 
 
 # count all by classes
@@ -159,7 +185,6 @@ f_parc %>%
             n = n())
 
 
-
 # check records which don't match between new process and Lauren's original lookup
 
 # in new but not in old
@@ -172,8 +197,10 @@ new_not_old <- class_all %>%
 
 # in old but not in new
 old_not_new <- f_parc %>% 
-  anti_join(class_all, by = c("registry_stone_id", "uncertainty_class")) #%>% 
-  # group_by(uncertainty_class) %>% 
+  anti_join(class_all, by = c("registry_stone_id", "uncertainty_class")) %>% 
+  group_by(uncertainty_class) %>% 
+  count(uncertainty_class)
   # summarise(parcels = n_distinct(Stone_Unique_ID_revised)) %>% copyExcel()
 
 # write_csv(old_not_new, "output/facilities/facility_parcel_lookup_old_not_new.csv")
+

@@ -45,9 +45,9 @@ This final lookup file is saved as: `output/facilities/facility_parcel_lookup_20
 
 Five facilities from RJ's input data (`facilities_20220311.csv`) are outside the study area, and one is missing lat & lon data, so the number of remaining facilities that have been matched to parcels is 1,238.
 
-n rows = 6,366
+n rows = 6,330
 n unique facilities (registry_id) = 1,238
-n unique parcels (Stone_Unique_ID_revised) = 5,469
+n unique parcels (Stone_Unique_ID_revised) = 5,441
 n parcels with no matched facility (industrial land) = 2,486
 
 The table below is a summary of the number of facilities and matched parcels for each uncertainty_class, along with the % increase in facilities from the additions to the facility list.
@@ -55,8 +55,8 @@ The table below is a summary of the number of facilities and matched parcels for
 | uncertainty_class | facilities | parcels | n records | % extra facilities |
 | --- | --- | --- | --- | --- |
 | 1 | 411 | 498 | 873 | 30% |
-| 2 | 443 | 416 | 456 | 27% |
-| 3 | 210 | 207 | 255 | 44% |
+| 2 | 440 | 415 | 453 | 27% |
+| 3 | 185 | 180 | 222 | 45% |
 | 4.1 | 62 | 110 | 145 | 44% |
 | 4.2 | 146 | 626 | 758 | 36% |
 | 4.3 | 177 | 1186 | 1393 | 42% |
@@ -76,16 +76,14 @@ This is a count of the records in the new lookup which don’t match on registry
 
 | uncertainty_class | stat_land_comb | n parcels |
 | --- | --- | --- |
-| 3 | NA | 5 |
+| 3 | NA | 2 |
 | 4.2 | C3 | 12 |
 | 4.3 | NA | 3 |
 | 5 | F2 | 312 |
 
 Extract of these saved as: `output/facilities/facility_parcel_lookup_new_not_old.csv`
 
-I can’t work out why these weren’t in original matching. There don’t seem to be any records with uncertainty_class = 4.2 and stat_land_comb = “C3” in the original lookup so I wonder if this field might have been missed in a query. 
-
-class 3 and 4 differences are really minor, but there are a lot more industrial parcels included - perhaps Lauren’s industrial parcels were limited to study area whereas I’ve just pulled all from the .gdb?
+class 3 and 4 differences are really minor, but there are a lot more industrial parcels included - the cause is possibly a slightly different version of the parcel data being used, as there were lot of iterations of the land use field based due to errors merging different data sources, and Lauren's process also had some extra filter steps.
 
 ****************************************************In old lookup but not new:****************************************************
 
@@ -94,11 +92,10 @@ This is a count of records which don’t match on registry_id and uncertainty_cl
 | uncertainty_class | parcels |
 | --- | --- |
 | 1 | 1 |
-| 2 | 1 |
+| 2 | 2 |
+| 3 | 28 |
 | 5 | 159 |
 
-The class 1 and 2 parcels included here but not in the new lookup both have NA values for land_use_comb in the parcel data I’m using, so not sure why they were in the old one. The facilities are included in the new lookup as class 3 matches.
-
-The class 5 parcels here are all in the new lookup matched as class 1 or 4.1 to the new facilities which were added to the facilities list.
+For the class 1 and 2 mis-matches, this seems to be due to slight variations in land_use type. For class 3, these are records which have been excluded from the new lookup because they have a class 1 or two match due to the new de-duping for class 1-3. And all the class 5 records here are industrial parcels which are in the new lookup but matched as either class 1 or 4.1 to the new facilities which were included.
 
 File of these records saved as: `output/facilities/facility_parcel_lookup_old_not_new.csv`
