@@ -18,7 +18,7 @@ theme_set(theme_edf())
 
 # Load data ---------------------------------------------------------------
 
-# bounding box of watershed and subbasins combined - this is the study area extent
+# bounding box of watershed and subbasins combined - this is the study area extent  
 study_area <- st_read("data/watershed_subbasin_bbox/watershed_subbasin_bbox.shp")
 
 

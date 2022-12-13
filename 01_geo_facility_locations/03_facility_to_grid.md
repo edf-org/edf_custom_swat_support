@@ -10,8 +10,8 @@ The result is a lookup file between facility (using registry ID or the stone uni
 
 | file name | description |
 | --- | --- |
-| `facility_parcel_lookup_2022-12-08.csv` | The lookup between facilities and land parcels created in `02_facility_to_parcel.R`. The identifier registry_stone_id in this file is either the registry_id (for facilities) and Stone_Unique_ID_revised for the unlinked industrial land parcels included). |
-| `parcels_lookup_only_20221208.gpkg` | Land parcel data from the parcels .gdb, but restricted to just parcels which are in the lookup file. This smaller file is used here just to speed up the spatial joining in R. |
+| `facility_parcel_lookup_2022-12-13.csv` | The lookup between facilities and land parcels created in `02_facility_to_parcel.R`. The identifier registry_stone_id in this file is either the registry_id (for facilities) and Stone_Unique_ID_revised for the unlinked industrial land parcels included). |
+| `parcels_lookup_only_2022-12-13.gpkg` | Land parcel data from the parcels .gdb, but restricted to just parcels which are in the lookup file. This smaller file is used here just to speed up the spatial joining in R. |
 | `raster_template.tif` | The raster file covering the study area in a 100x100m grid. |
 
 Note: the land parcel data contains some instances of overlapping geometries, of two types:
@@ -58,7 +58,7 @@ The diagram below shows two example grid cells (with the *grid_id* in the centre
 
 ## End point
 
-`output/facilities/facility_grid_lookup_2.0_2022-12-08.csv`
+`output/facilities/facility_grid_lookup_2.0_2022-12-13.csv`
 
 n rows = 93,086
 
@@ -95,11 +95,12 @@ Count of facilities, grid cells and area covered by the different uncertainty cl
 | uncertainty_class | n_facilities | n_grid_cells | total_area_km_2 |
 | --- | --- | --- | --- |
 | 1 | 	411 | 	18,287 | 	123 | 
-| 2 | 	443 | 	4,847 | 	25.2 | 
-| 3 | 	210 | 	10,254 | 	63.3 | 
+| 2 | 	440 | 	4,697 | 	24.3 | 
+| 3 | 	185 | 	8,520 | 	50 | 
 | 4.1 | 	62 | 	3,439 | 	21.5 | 
 | 4.2 | 	146 | 	2,876 | 	14.4 | 
 | 4.3 | 	177 | 	11,618 | 	75.7 | 
 | 5 | 	2,486 | 	43,649 | 	240.8 | 
-| 6 | 	6 | 	6 | 	0.1 | 
+| 6 | 	6 | 	6 | 	NA | 
+
 
