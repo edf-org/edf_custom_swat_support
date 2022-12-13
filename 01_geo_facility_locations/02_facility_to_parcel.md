@@ -41,6 +41,13 @@ A number of classes have been decided to describe the quality of the match betwe
 
 This final lookup file is saved as: `output/facilities/facility_parcel_lookup_2022-12-08.csv`.
 
+### Duplicate scenarios and approach
+Because of the fact that facilities can be very close or at the same location, because parcels can overlap, and because of the 100m buffer approach to matching, there are a number of situations where facilities can be matched to multiple parcels, or vice versa. The points below describe each of those scenarios, and the approach to handle them taken in this processing:
+
+1. Two or more unique facilities match the same parcel and have the same uncertainty class – this is okay, unique facility points can be close together and share a site.
+2. One facility directly matches (i.e. facility is within parcel boundaries) multiple unique parcels with different land uses. In this situation the highest quality match is kept and the others discarded. So if a facility has matches of class 1 and class 3, only the class 1 match is kept.
+3. One facility matches at a distance (i.e. facility within 100m of parcel boundary) multiple unique parcels with different land uses. In this situation all matches are kept, as the 100m buffer is a fuzzy match. So if a facility has matches of class 4.1 and 4.2 each match is kept.
+
 ## Lookup file summary
 
 Five facilities from RJ's input data (`facilities_20220311.csv`) are outside the study area, and one is missing lat & lon data, so the number of remaining facilities that have been matched to parcels is 1,238.
