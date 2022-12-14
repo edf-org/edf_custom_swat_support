@@ -300,7 +300,10 @@ def read_SWAT_pst(fpath):
     
     # read file - infer rows set to low to pick up fixed widths from the first few rows
     # and not be thrown off by the weird annual summary text at the bottom of the file
-    df = pd.read_fwf(fpath, skiprows = 11, header = None, infer_nrows = 6) 
+    df = pd.read_fwf(fpath, 
+                     skiprows = 11, 
+                     header = None, 
+                     widths = cfg.fixed_col_widths[ftype]) 
     
     # add in column headers
     try:
