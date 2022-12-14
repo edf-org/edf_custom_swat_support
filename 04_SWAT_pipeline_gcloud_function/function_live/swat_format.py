@@ -164,3 +164,33 @@ def format_sub(df, model_period, cio_dict, chunk_s, chunk_n, chunk_l):
             raise
 
     return df
+
+
+def format_pst(df, model_period, cio_dict):
+
+    # formatting here is very simple
+    # the file contains YEAR so no need to do fiddly date inference from cio file.
+    # And both monthly and daily formats have annual summary of same type at the bottom
+    # so can be treated the same.
+    # Simply dropping NAs removes the annual summary from the bottom for 
+    # both daily and monthly files, as well as the NAs throughout for monthly
+    
+    # remove NAs
+    df = df.dropna(axis=0)
+    
+    # update column dtypes
+    col_dtypes = {'GIS' : str, 
+              'YEAR' : int, 
+              'MON' : int, 
+              'SOLUBLE' : float, 
+              'SORBED' : float, 
+              'chem_value' : int}
+
+    try:
+        df = df.astype(col_dtypes)
+    
+    except:
+        print("Field is of the wrong data type, check format is as expected and NAs are being removed by format_pst.")
+        raise
+    
+    return df

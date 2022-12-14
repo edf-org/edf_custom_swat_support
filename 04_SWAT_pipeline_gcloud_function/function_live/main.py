@@ -263,6 +263,60 @@ def read_SWAT_hru(fpath, ftype, model_desc, model_period, cio_dict):
 
 
 
+def read_SWAT_pst(fpath):
+    """Function to carry out custom read-in of a SWAT model output.pst file
+
+    Args:
+        fpath: the file location in gcloud temp storage
+    Returns:
+        DataFrame: A basically formatted version of the output file
+        with the file headers supplied in the metadata but no further 
+        file-specific formatting
+    """
+
+    # read in meta data to help read output files
+    file_headers = pd.read_csv(write_to_tmp("healthy_gulf", "SWAT_outputs/file_metadata_headers.csv"))
+
+    # pull file type from the filename
+    ftype = fpath.split('.')[1]
+    
+    # extract the headers list and line skip info from the metadata files
+    try:
+        header_values = file_headers[ftype][~file_headers[ftype].isnull()].values
+        skip_value = cfg.file_skips[ftype]
+
+    except KeyError:
+        print("File type .{} not found in 'file_metadata_....csv' file".format(ftype))
+        raise
+
+        
+    # extract headers from top of file
+    with open(fpath) as file:
+        head = [next(file) for x in range(skip_value)]
+    
+    # split header line 9 and pull out the last item which should be the chemical value
+    chem_val = head[8].split()[-1]
+    
+    
+    # read file - infer rows set to low to pick up fixed widths from the first few rows
+    # and not be thrown off by the weird annual summary text at the bottom of the file
+    df = pd.read_fwf(fpath, skiprows = 11, header = None, infer_nrows = 6) 
+    
+    # add in column headers
+    try:
+        df.columns = header_values
+
+    except ValueError:
+        print("n columns in output file {} does not match n columns in 'file_metadata_headers.csv'".format(fpath))
+        raise
+    
+    # add in chemical value column
+    df['chem_value'] = chem_val
+    
+    return df
+
+
+
 def bq_load(event, context):
     """Background Cloud Function to be triggered by Cloud Storage.
        This generic function logs relevant data when a file is changed.
@@ -328,6 +382,10 @@ def bq_load(event, context):
             elif (ftype == 'sub'):
                 print('running sub read')
                 read_SWAT_sub(tmp_path, ftype, model_desc, model_period, cio_dict)
+
+            elif (ftype == 'pst'):
+                print('running pst read')
+                df = read_SWAT_pst(tmp_path)
             
             else:
                 print('running standard read')
