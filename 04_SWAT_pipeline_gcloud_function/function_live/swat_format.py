@@ -116,23 +116,7 @@ def format_hru(df, model_period, cio_dict, chunk_s, chunk_n, chunk_l):
 
     if model_period == 'monthly':
             
-        try:
-            # pull min and max year values from MON field (which contains days, months & years)
-            year_start = int(min(df[df['MON'] > 100].MON))
-            year_end = int(max(df[df['MON'] > 100].MON))
-        
-        except:
-            print("Expecting annual averages in monthly file but none found. Is model time interval defined correctly?")
-            raise
-                
-        # remove annual summaries throughout file, i.e. where MON is not a month or day value
-        df = df[df['MON'] < 1000]
-
-        # cut off total average summary from bottom of file
-        df = df.iloc[0:len(df)-2169, :]
-    
-        # create array of year values to match date sequence in monthly file
-        df['year'] = [i for i in range(year_start, year_end + 1) for k in range(0, (cfg.unique_locations['hru'] * 12))]
+        raise ValueError("Unable to process hru files in monthly format, please try daily.")
 
     if model_period == 'daily': 
         
@@ -159,23 +143,7 @@ def format_sub(df, model_period, cio_dict, chunk_s, chunk_n, chunk_l):
 
     if model_period == 'monthly':
             
-        try:
-            # pull min and max year values from MON field (which contains days, months & years)
-            year_start = int(min(df[df['MON'] > 100].MON))
-            year_end = int(max(df[df['MON'] > 100].MON))
-        
-        except:
-            print("Expecting annual averages in monthly file but none found. Is model time interval defined correctly?")
-            raise
-                
-        # remove annual summaries throughout file, i.e. where MON is not a month or day value
-        df = df[df['MON'] < 1000]
-
-        # cut off total average summary from bottom of file
-        df = df.iloc[0:len(df)-332, :]
-    
-        # create array of year values to match date sequence in monthly file
-        df['year'] = [i for i in range(year_start, year_end + 1) for k in range(0, (cfg.unique_locations['sub'] * 12))]
+        raise ValueError("Unable to process sub files in monthly format, please try daily.")
 
     if model_period == 'daily': 
         
