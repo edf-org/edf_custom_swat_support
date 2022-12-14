@@ -190,12 +190,12 @@ def read_SWAT_sub(fpath, ftype, model_desc, model_period, cio_dict):
         chunk = chunk.iloc[:, 1:]
 
         # format chunk to add in date field
-        df = swat_format.format_sub(chunk, "daily", cio_dict, chunk_s, i, len(chunk))
+        df = swat_format.format_sub(chunk, model_period, cio_dict, chunk_s, i, len(chunk))
 
         # add model info
         df['model_run_datetime'] = load_time
         df['model_info'] = model_desc
-        df['model_time_interval'] = "daily"
+        df['model_time_interval'] = model_period
 
         push_to_bq(df, "healthy_gulf", "SWAT_output_" + ftype) 
 
@@ -246,12 +246,12 @@ def read_SWAT_hru(fpath, ftype, model_desc, model_period, cio_dict):
         chunk.columns = [c.replace('/', '_') for c in chunk.columns]
 
         # format chunk to add in date field
-        df = swat_format.format_hru(chunk, "daily", cio_dict, chunk_s, i, len(chunk))
+        df = swat_format.format_hru(chunk, model_period, cio_dict, chunk_s, i, len(chunk))
 
         # add model info
         df['model_run_datetime'] = load_time
         df['model_info'] = model_desc
-        df['model_time_interval'] = "daily"
+        df['model_time_interval'] = model_period
 
         push_to_bq(df, "healthy_gulf", "SWAT_output_" + ftype)
 
