@@ -1,6 +1,6 @@
 import numpy as np
 
-target_files = ['rsv', 'rch', 'sed', 'vel', 'hru', 'sub']
+target_files = ['rsv', 'rch', 'sed', 'vel', 'hru', 'sub', 'pst']
 
 unique_locations = {'rsv' : 4,
                     'rch' : 332,
@@ -15,7 +15,8 @@ file_skips = {'rsv' : 9,
                 'sed' : 1,
                 'vel' : 2,
                 'hru' : 9,
-                'sub' : 9}
+                'sub' : 9,
+		'pst' : 11}
 
 
 n_fixed_cols = {'rsv' : 3,
