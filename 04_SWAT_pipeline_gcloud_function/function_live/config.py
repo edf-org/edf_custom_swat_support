@@ -31,7 +31,8 @@ fixed_col_widths = {'rsv' : [11, 3, 5],
                     'sed' : [7, 3, 9, 6],
                     'vel' : [5, 5],
                     'hru' : [4, 5, 10, 5, 5, 5, 10],
-                    'sub' : [7, 3, 9, 5, 10]}
+                    'sub' : [7, 3, 9, 5, 10],
+		    'pst' : [10, 5, 4, 17, 17]}
 
 fixed_col_dtypes = {'rsv' : ['str', np.int32, np.int32],
                     'rch' : ['str', np.int32, 'str', np.int32, np.float64],
