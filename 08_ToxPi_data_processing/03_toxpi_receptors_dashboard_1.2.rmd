@@ -1,0 +1,309 @@
+---
+title: "Healthy Gulf project: Receptor ToxPi v1.2 (dataset = 2022_10_14)"
+  # Source: "World Bank https://data.worldbank.org"
+output:  
+  flexdashboard::flex_dashboard:
+    orientation: columns
+---
+
+```{r include=FALSE}
+pacman::p_load(tidyverse, RColorBrewer, leaflet, raster, sf, DT, scales)
+
+# source("src/edf_theme.r")
+# theme_set(theme_edf())
+
+# READ IN DATASETS ---------------------------------------------
+
+ToxPi_layers <- c("tox_pi_score",
+                   "tox_pi_score_dec10_only",
+                   "baseline_ecosystem", 
+                   "baseline_flood",
+                   "baseline_health",
+                   "baseline_infrastructure",
+                   "baseline_social",
+                   "flood_delft3d",
+                   "flood_swat")
+
+# create list of filenames
+ToxPi_files <- sprintf("output/ToxPi_outputs_processed/%s.tif", ToxPi_layers)
+
+# read files into list and name by domain
+ToxPi_rasters <- lapply(ToxPi_files, raster::raster)
+names(ToxPi_rasters) <- ToxPi_layers
+
+
+# PROJECT ADMIN DATASETS
+# facilities  locations
+fac_sf <- st_read("data/facilities/facilities_all_coded_2022-12-08.gpkg") %>%
+  st_transform(4326) %>%
+  dplyr::select(REGISTRY_ID)
+
+# ToxPi datasets list
+tp_inputs <- read_csv("data/ToxPi_inputs/ToxPi inputs list.csv") %>%
+  filter(processed == 1)
+
+
+
+# MAPPING INPUTS
+
+# Create color palettes
+
+pal_overall <- colorQuantile(palette = "YlOrRd",
+                     domain = values(ToxPi_rasters[["tox_pi_score"]]),
+                     n = 10,
+                     na.color = "transparent")
+
+pal_flood <- colorBin(palette = "Blues",
+                      domain = values(ToxPi_rasters[["baseline_flood"]]),
+                      bins = seq(0.1, 1, 0.1),
+                      na.color = "transparent")
+
+
+# Function to create leaflet map with flood and facilities layers,
+# plus user-defined domain layer using specified color palette
+
+map_domain <- function(layer_name, color_pal){
+  
+  pal_domain <- colorBin(palette = color_pal,
+                     domain = values(ToxPi_rasters[[layer_name]]),
+                     bins = seq(0, 1, 0.1),
+                     na.color = "transparent")
+  
+  leaflet() %>%
+    addProviderTiles("CartoDB.Positron") %>%
+    # ToxPi data
+    addRasterImage(ToxPi_rasters[[layer_name]],
+                   colors = pal_domain,
+                   opacity = 0.6,
+                   group = layer_name) %>%
+    addLegend(pal = pal_domain,
+              values = values(ToxPi_rasters[[layer_name]]),
+              title = layer_name) %>%
+    # ToxPid data - flood risk
+    addRasterImage(ToxPi_rasters[["baseline_flood"]],
+                   colors = pal_flood,
+                   opacity = 0.8,
+                   group = "baseline_flood") %>%
+    addLegend(pal = pal_flood,
+              values = values(ToxPi_rasters[["baseline_flood"]]),
+              title = "baseline_flood") %>%
+    # Facility data
+    addCircles(data = fac_sf,
+               color = "NA",
+               fillColor = "black",
+               opacity=.2,
+               fillOpacity=.7,
+               radius = 50,
+               group = "Facilities") %>%
+    # layers
+    addLayersControl(position = "topleft",
+                     overlayGroups = c(layer_name,
+                                       "baseline_flood", 
+                                       "Facilities"),
+                     options = layersControlOptions(collapsed = TRUE)) %>%
+    hideGroup(c("baseline_flood", 
+                "Facilities"))
+  
+}
+
+
+
+```   
+
+Dataset overview
+=======================================================================
+    
+### ToxPi Inputs List
+    
+```{r}
+
+# Create an interactive datatable by listing the required columns
+DT::datatable(tp_inputs[, c(
+                            'Domain',
+                            'Subcategory',
+                            'Indicator Name',
+                            'Adverse Direction',
+                            'Agency or data source',
+                            'Year of data release',
+                            'Geographic Level',
+                            'URL',
+                            'Download Date'
+                            )],
+              rownames = FALSE,
+              # options = list(pageLength = 50)
+)
+
+```
+   
+
+
+Overall tox_pi_score
+=======================================================================
+
+### Map
+
+```{r}
+
+
+# create leaflet map - bit different for main map so don't use function
+
+leaflet() %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  # ToxPi data
+  addRasterImage(ToxPi_rasters[["tox_pi_score"]],
+                 colors = pal_overall,
+                 opacity = 0.5,
+                 group = "ToxPi overall decile") %>%
+  addLegend(pal = pal_overall,
+            values = values(ToxPi_rasters[["tox_pi_score"]]),
+            title = "ToxPi overall decile") %>%
+  # ToxPid data - flood risk
+  addRasterImage(ToxPi_rasters[["baseline_flood"]],
+                 colors = pal_flood,
+                 opacity = 0.8,
+                 group = "baseline_flood") %>%
+  addLegend(pal = pal_flood,
+            values = values(ToxPi_rasters[["baseline_flood"]]),
+            title = "baseline_flood") %>%
+  # ToxPi data - decile 10 only
+  addRasterImage(ToxPi_rasters[["tox_pi_score_dec10_only"]],
+                 colors = c("#b30000"),
+                 opacity = 0.5,
+                 group = "tox_pi_score - decile 10") %>%
+  # Facility data
+  addCircles(data = fac_sf,
+             color = "NA",
+             fillColor = "black",
+             opacity=.2,
+             fillOpacity=.7,
+             radius = 50,
+             group = "Facilities") %>%
+  # layers
+  addLayersControl(position = "topleft",
+                   overlayGroups = c("ToxPi overall decile", 
+                                     "tox_pi_score - decile 10",
+                                     "baseline_flood", 
+                                     "Facilities"),
+                   options = layersControlOptions(collapsed = TRUE)) %>%
+  hideGroup(c("tox_pi_score - decile 10", 
+              "baseline_flood", 
+              "Facilities"))
+
+```
+
+
+
+Ecosystem domain
+=======================================================================
+
+### Map
+
+```{r}
+
+map_domain("baseline_ecosystem", "Greens")
+
+```
+
+Flood domain
+=======================================================================
+
+### Map
+
+```{r}
+
+pal_SWAT <- colorBin(palette = "BuGn",
+                      domain = values(ToxPi_rasters[["flood_swat"]]),
+                      bins = seq(0.1, 1, 0.1),
+                      na.color = "transparent")
+
+pal_Delft3D <- colorBin(palette = "PuRd",
+                      domain = values(ToxPi_rasters[["flood_delft3d"]]),
+                      bins = seq(0.1, 1, 0.1),
+                      na.color = "transparent")
+
+
+# create map for flood data - bit different for main map so don't use function
+
+leaflet() %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  # ToxPi data
+  addRasterImage(ToxPi_rasters[["baseline_flood"]],
+                 colors = pal_flood,
+                 opacity = 0.95,
+                 group = "baseline_flood") %>%
+  addLegend(pal = pal_flood,
+            values = values(ToxPi_rasters[["baseline_flood"]]),
+            title = "baseline_flood") %>%
+  # Overland Flooding
+  addRasterImage(ToxPi_rasters[["flood_swat"]],
+                 colors = pal_SWAT,
+                 opacity = 0.95,
+                 group = "flood_swat") %>%
+  addLegend(pal = pal_SWAT,
+            values = values(ToxPi_rasters[["flood_swat"]]),
+            title = "flood_swat") %>%
+  
+  # Coastal Flooding
+  addRasterImage(ToxPi_rasters[["flood_delft3d"]],
+                 colors = pal_Delft3D,
+                 opacity = 0.95,
+                 group = "flood_delft3d") %>%
+  addLegend(pal = pal_Delft3D,
+            values = values(ToxPi_rasters[["flood_delft3d"]]),
+            title = "flood_delft3d") %>%
+
+  # Facility data
+  addCircles(data = fac_sf,
+             color = "NA",
+             fillColor = "black",
+             opacity=.2,
+             fillOpacity=.7,
+             radius = 50,
+             group = "Facilities") %>%
+  # layers
+  addLayersControl(position = "topleft",
+                   overlayGroups = c("baseline_flood",
+                                     "flood_swat",
+                                     "flood_delft3d", 
+                                     "Facilities"),
+                   options = layersControlOptions(collapsed = TRUE)) %>%
+  hideGroup(c("flood_swat", 
+              "flood_delft3d", 
+              "Facilities"))
+
+```
+
+Health domain
+=======================================================================
+
+### Map
+
+```{r}
+
+map_domain("baseline_health", "YlGnBu")
+
+```
+
+
+Infrastructure domain
+=======================================================================
+
+### Map
+
+```{r}
+
+map_domain("baseline_infrastructure", "PuRd")
+
+```
+
+
+Social domain
+=======================================================================
+
+### Map
+
+```{r}
+
+map_domain("baseline_social", "Purples")
+
+```
