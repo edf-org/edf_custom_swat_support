@@ -208,7 +208,7 @@ f_grid_lookup <- bind_rows(f_grid_lookup, no_match_facs)
 
 # save
 f_grid_lookup %>% write_csv(paste0("output/facilities/facility_grid_lookup_2.0_", today(), ".csv"))
-
+# f_grid_lookup <- read_csv(paste0("output/facilities/facility_grid_lookup_2.0_", today(), ".csv"))
 
 # counts of lookup file
 f_grid_lookup %>% summarise(rows = n(),
@@ -221,4 +221,4 @@ f_grid_lookup %>%
   summarise(n_facilities = n_distinct(registry_stone_id),
             n_grid_cells = n(),
             #               mean_area_pct = mean(area_grid_pct),
-            total_area_km_2 = scales::comma(sum((grid_area_pct * 10000)) / 1000000, accuracy = 0.1))
+            total_area_km_2 = scales::comma(sum((grid_area_pct * 10000)) / 1000000, accuracy = 0.1)) %>% copyExcel()

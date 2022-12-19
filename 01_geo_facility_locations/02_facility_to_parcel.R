@@ -167,7 +167,7 @@ class_all <- bind_rows(class_1234, class_5) %>%
 # parc.sf %>% 
 #   inner_join(class_all %>% distinct(Stone_Unique_ID_revised),
 #              by = "Stone_Unique_ID_revised") %>% 
-#   st_write("output/parcels/parcels_lookup_only_20221213.gpkg", delete_dsn = TRUE)
+#   st_write("output/parcels/parcels_lookup_only_2022-12-13.gpkg", delete_dsn = TRUE)
 
 
 # count all by classes
