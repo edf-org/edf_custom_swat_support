@@ -21,11 +21,11 @@ source("src/functions.r")
 # note - make sure the ToxPi csv has a field called cell_id (rename from grid_id) if necessary..
 
 # ToxPi file
-# toxpi_fpath <- "data/ToxPi_outputs/2022_10_14/NAS_toxpi_scale-allinone-10-14-22.csv"
+toxpi_fpath <- "data/ToxPi_outputs/2022_10_14/NAS_toxpi_scale-allinone-10-14-22.csv"
 # toxpi_fpath <- "data/ToxPi_outputs/2022_08_08/NAS_toxpi_facility-allinone-08-08-2022.csv"
 
 # output folder for ToxPi rasters
-output_folder <- "output/ToxPi_outputs_processed/"
+output_folder <- "output/ToxPi_outputs_processed/facility/"
 
 # raster template
 rt <- read_stars("data/raster_template/raster_template.tif")
@@ -35,21 +35,28 @@ rt <- read_stars("data/raster_template/raster_template.tif")
 
 # read in file and make clean names
 tp.df <- read_csv(toxpi_fpath) %>% 
-  janitor::clean_names()
+  janitor::clean_names() %>% 
+  rename(cell_id = grid_id)
 
 # remove cell_id to get list of just ToxPi variable names. Alternatively, just write list as below
-tp_var_names <- names(tp.df)[names(tp.df) != "cell_id"]
+# tp_var_names <- names(tp.df)[names(tp.df) != "cell_id"]
 # tp_var_names <- c("tox_pi_score", "baseline_ecosystem", "baseline_flood", "baseline_health")
+tp_var_names <- c("tox_pi_score")
+
 
 # run through vars, convert csv data to raster, and save
 for (var in tp_var_names){
+  
+  if (!"cell_id" %in% names(tp.df)){
+    print("No cell_id column in ToxPi data frame!")
+    break
+  }    
 
   # print(paste0(output_folder, v, ".tif"))  
   tp.df %>%
     csv_to_raster("cell_id", var, rt) %>%
     write_stars(paste0(output_folder, var, ".tif"))
 }
-
 
 
 # Decile 10 cells only ----------------------------------------------------
