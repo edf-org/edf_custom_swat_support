@@ -1,6 +1,6 @@
 # Description
 
-> Note: these scripts use some helper functions to convert between csv and raster formats. These can be found in `src/functions.R`.
+> Note: these scripts use some helper functions to convert between csv and raster formats. These can be found in [`src/functions.R`](/src/functions.R).
 
 Scripts in this folder cover the following areas:
 
