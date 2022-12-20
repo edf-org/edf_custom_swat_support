@@ -1,6 +1,5 @@
 ---
 title: "Healthy Gulf project: Receptor ToxPi v1.2 (dataset = 2022_10_14)"
-  # Source: "World Bank https://data.worldbank.org"
 output:  
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -9,8 +8,6 @@ output:
 ```{r include=FALSE}
 pacman::p_load(tidyverse, RColorBrewer, leaflet, raster, sf, DT, scales)
 
-# source("src/edf_theme.r")
-# theme_set(theme_edf())
 
 # READ IN DATASETS ---------------------------------------------
 
@@ -27,7 +24,8 @@ ToxPi_layers <- c("tox_pi_score",
 # create list of filenames
 ToxPi_files <- sprintf("output/ToxPi_outputs_processed/%s.tif", ToxPi_layers)
 
-# read files into list and name by domain
+# read files into list and name by domain - this makes it a bit easier to refer to all 
+# the different raster files below.
 ToxPi_rasters <- lapply(ToxPi_files, raster::raster)
 names(ToxPi_rasters) <- ToxPi_layers
 
@@ -61,6 +59,7 @@ pal_flood <- colorBin(palette = "Blues",
 
 # Function to create leaflet map with flood and facilities layers,
 # plus user-defined domain layer using specified color palette
+# This makes it quick to reproduce similar maps for the different domains
 
 map_domain <- function(layer_name, color_pal){
   
@@ -71,6 +70,7 @@ map_domain <- function(layer_name, color_pal){
   
   leaflet() %>%
     addProviderTiles("CartoDB.Positron") %>%
+    setView(lng = -95.3, lat = 30, zoom = 8) %>%
     # ToxPi data
     addRasterImage(ToxPi_rasters[[layer_name]],
                    colors = pal_domain,
@@ -149,6 +149,7 @@ Overall tox_pi_score
 
 leaflet() %>%
   addProviderTiles("CartoDB.Positron") %>%
+  setView(lng = -95.3, lat = 30, zoom = 8) %>% 
   # ToxPi data
   addRasterImage(ToxPi_rasters[["tox_pi_score"]],
                  colors = pal_overall,
@@ -226,6 +227,7 @@ pal_Delft3D <- colorBin(palette = "PuRd",
 
 leaflet() %>%
   addProviderTiles("CartoDB.Positron") %>%
+  setView(lng = -95.3, lat = 30, zoom = 8) %>% 
   # ToxPi data
   addRasterImage(ToxPi_rasters[["baseline_flood"]],
                  colors = pal_flood,
