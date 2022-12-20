@@ -1,0 +1,82 @@
+---
+title: "Healthy Gulf project: ToxPi round 1 results dashboard"
+output: flexdashboard::flex_dashboard
+---
+  
+```{r include=FALSE}
+
+## Initial chunk - this won't produce anything on the dashboard, it just reads in data
+
+pacman::p_load(tidyverse, RColorBrewer, leaflet, raster, sf, DT, scales)
+
+
+# READ IN DATASETS ---------------------------------------------
+
+# MAKE SURE THESE TWO LINES ARE POINTING AT UP TO DATE FILES!
+# for the raster file, use 02_toxpi_outputs_to_raster.R to create a raster from the 
+# csv ToxPi outputs
+
+# full scores raster
+ToxPi_rt <- raster("output/ToxPi_outputs_processed/tox_pi_score.tif") 
+
+# PROJECT ADMIN DATASETS
+# facilities  locations
+fac_sf <- st_read("data/facilities/facilities_all_coded_2022-12-08.gpkg") %>%
+  st_transform(4326) %>% 
+  dplyr::select(REGISTRY_ID)
+
+
+```   
+
+Overall Score
+=======================================================================
+  
+### Map
+  
+```{r}
+
+# create Leaflet colour palette function for toxpi score values. This is a basic decile palette,
+# defined with the n = 10 argument, but different options are available. palette arguement
+# takes RColorBrewer palette codes
+pal_overall <- leaflet::colorQuantile(palette = "YlOrRd", 
+                                      domain = values(ToxPi_rt),
+                                      n = 10,
+                                      na.color = "transparent")
+
+# alternate palette option, manually defining bins 
+# see here for more options https://rstudio.github.io/leaflet/colors.html
+# pal_overall <- leaflet::colorBin(palette = "Blues",
+#                                  domain = values(ToxPi_rt),
+#                                  bins = seq(0.1, 1, 0.1),
+#                                  na.color = "transparent")
+
+# create leaflet map
+leaflet() %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  setView(lng = -95.3, lat = 30, zoom = 8) %>% 
+  # ToxPi data
+  addRasterImage(ToxPi_rt, 
+                 colors = pal_overall, 
+                 opacity = 0.5,
+                 group = "ToxPi score decile") %>%
+  addLegend(pal = pal_overall,
+            values = values(ToxPi_rt),
+            title = "ToxPi score decile") %>%
+
+  # Facility data
+  addCircles(data = fac_sf, 
+             color = "NA",
+             fillColor = "black",
+             opacity=.2, 
+             fillOpacity=.7, 
+             radius = 50, 
+             group = "Facilities") %>%
+  # layers
+  addLayersControl(position = "topleft", 
+                   overlayGroups = c("ToxPi score decile",
+                                     "Facilities"),
+                   options = layersControlOptions(collapsed = TRUE)) %>%
+  hideGroup(c("Facilities"))
+
+
+```

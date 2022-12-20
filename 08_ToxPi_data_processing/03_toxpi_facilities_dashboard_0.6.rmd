@@ -1,0 +1,145 @@
+---
+title: "Healthy Gulf project: Facilities ToxPi (demonstration only)"
+# Source: "World Bank https://data.worldbank.org"
+output: flexdashboard::flex_dashboard
+---
+  
+```{r include=FALSE}
+pacman::p_load(tidyverse, RColorBrewer, leaflet, raster, sf, scales)
+
+
+# READ IN DATASETS ---------------------------------------------
+
+# ToxPi DATASETS
+
+ToxPiF_layers <- c("facility_tox_pi_score",
+                   "facility_delft3d",
+                   "facility_swat",
+                   "facility_nei",
+                   "facility_rmp")
+
+# create list of filenames
+ToxPiF_files <- sprintf("output/ToxPi_outputs_processed/%s.tif", ToxPiF_layers)
+
+# read files into list and name by domain
+ToxPiF_rasters <- lapply(ToxPiF_files, raster::raster)
+names(ToxPiF_rasters) <- ToxPiF_layers
+
+
+# PROJECT ADMIN DATASETS
+# facilities  locations
+fac_sf <- st_read("data/facilities/facilities_all_coded_2022-12-08.gpkg") %>%
+  st_transform(4326) %>% 
+  dplyr::select(REGISTRY_ID)
+
+
+max(values(ToxPiF_rasters[[1]]))
+```   
+
+Facilities ToxPi map
+=======================================================================
+  
+### Map
+  
+```{r}
+
+
+pal_overall <- colorQuantile(palette = "YlOrRd", 
+                             domain = values(ToxPiF_rasters[["facility_tox_pi_score"]]),
+                             n = 5,
+                             na.color = "transparent")
+
+pal_delft <- colorBin(palette = "Blues", 
+                      domain = values(ToxPiF_rasters[["facility_delft3d"]]),
+                      bins = seq(0, 1, 0.1),
+                      na.color = "transparent")
+
+pal_swat <- colorBin(palette = "Greens", 
+                      domain = values(ToxPiF_rasters[["facility_swat"]]),
+                      bins = seq(0, 1, 0.1),
+                      na.color = "transparent")
+
+pal_nei <- colorBin(palette = "Oranges", 
+                      domain = values(ToxPiF_rasters[["facility_nei"]]),
+                      bins = seq(0, 1, 0.1),
+                      na.color = "transparent")
+
+pal_rmp <- colorBin(palette = "Purples", 
+                      domain = values(ToxPiF_rasters[["facility_rmp"]]),
+                      bins = seq(0, 1, 0.1),
+                      na.color = "transparent")
+
+
+leaflet() %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  setView(lng = -95.3, lat = 30, zoom = 8) %>% 
+  # ToxPi data
+  addRasterImage(ToxPiF_rasters[["facility_tox_pi_score"]],
+                 colors = pal_overall,
+                 opacity = 0.6,
+                 group = "ToxPi facilities quintile") %>%
+  addLegend(pal = pal_overall,
+            values = values(ToxPiF_rasters[["facility_tox_pi_score"]]),
+            title = "ToxPi facilities quintile") %>%
+  # ToxPid data - flood Delft
+  addRasterImage(ToxPiF_rasters[["facility_delft3d"]],
+                 colors = pal_delft,
+                 opacity = 0.8,
+                 group = "Flooding - coastal (Delft3D)") %>%
+  addLegend(pal = pal_delft,
+            values = values(ToxPiF_rasters[["facility_delft3d"]]),
+            title = "Flooding - coastal (Delft3D)") %>%
+
+  # ToxPid data - flood SWAT
+  addRasterImage(ToxPiF_rasters[["facility_swat"]],
+                 colors = pal_swat,
+                 opacity = 0.8,
+                 group = "Flooding - overland (SWAT)") %>%
+  addLegend(pal = pal_swat,
+            values = values(ToxPiF_rasters[["facility_swat"]]),
+            title = "Flooding - overland (SWAT)") %>%
+
+  # ToxPid data - chemical NEI
+  addRasterImage(ToxPiF_rasters[["facility_nei"]],
+                 colors = pal_nei,
+                 opacity = 0.8,
+                 group = "Chemical risk - NEI") %>%
+  addLegend(pal = pal_nei,
+            values = values(ToxPiF_rasters[["facility_nei"]]),
+            title = "Chemical risk - NEI") %>%
+
+  # ToxPid data - chemical RMP
+  addRasterImage(ToxPiF_rasters[["facility_rmp"]],
+                 colors = pal_rmp,
+                 opacity = 0.8,
+                 group = "Chemical risk - RMP") %>%
+  addLegend(pal = pal_rmp,
+            values = values(ToxPiF_rasters[["facility_rmp"]]),
+            title = "Chemical risk - RMP") %>%
+
+  # Facility data
+  addCircles(data = fac_sf,
+             color = "NA",
+             fillColor = "black",
+             opacity=.2,
+             fillOpacity=.7,
+             radius = 50,
+             group = "Facilities") %>%
+  # layers
+  addLayersControl(position = "topleft",
+                   overlayGroups = c("ToxPi facilities quintile",
+                                     "Flooding - coastal (Delft3D)",
+                                     "Flooding - overland (SWAT)",
+                                     "Chemical risk - RMP",
+                                     "Chemical risk - NEI",
+                                     "Facilities"),
+                   options = layersControlOptions(collapsed = TRUE)) %>%
+  hideGroup(c("Flooding - coastal (Delft3D)",
+              "Flooding - overland (SWAT)",
+              "Chemical risk - RMP",
+              "Chemical risk - NEI",
+              "Facilities"))
+
+
+```
+
