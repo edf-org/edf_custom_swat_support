@@ -113,7 +113,7 @@ ggplot() +
                        direction = 1, 
                        breaks = seq(0, 1, 0.2), 
                        limits = c(0, 1), 
-                       labels = scales::percent) +  
+                       labels = scales::percent) +    
   
   geom_sf_text(data = src_subs_labs.sf, 
                aes(label = subbasin), 
@@ -129,4 +129,4 @@ ggplot() +
   labs(title = paste0("Soluble chemical source % for subbasin ", 184), col = "")
 ```
 
-![](README_files/figure-html/map-1.png)<!-- -->
+![](figs/map%20-%20soluble%20chemical%20source%20pct%20by%20subbasin%20-%20receptor%20184.png)
