@@ -1,3 +1,20 @@
+---
+title: "README"
+author: "Greg Slater"
+date: '2022-12-21'
+output: 
+  html_document:
+    keep_md: true
+---
+
+```{r init, include=FALSE, message=FALSE}
+## load up packages
+
+pacman::p_load(tidyverse, lubridate, sf, janitor, viridis, RColorBrewer)
+
+source("src/edf_theme.r")
+source("src/functions.r")
+```
 
 # Description
 
@@ -16,28 +33,16 @@ Aggregating this (across the daily output) gives us the average amount of the in
 
 ## R calculation example
 
+```{r read, echo=TRUE, message=FALSE}
 
-```r
 # read in csv from sql query
 src.df <- read_csv("data/BQ/rch_source_app - chemtest.csv")
 head(src.df)
 ```
 
-```
-## # A tibble: 6 x 6
-##   model_info           source_sub receptor_sub avg_solpst_in avg_sorpst_in count
-##   <chr>                     <dbl>        <dbl>         <dbl>         <dbl> <dbl>
-## 1 chemtest_0508_koc50~        138          138      3063291.          653.  1461
-## 2 chemtest_0508_koc50~        138          148       712318.       343587.  1461
-## 3 chemtest_0508_koc50~        138          159       169643.       206736.  1461
-## 4 chemtest_0508_koc50~        138          166       146888.        71189.  1461
-## 5 chemtest_0508_koc50~        138          184       109707.        35245.  1461
-## 6 chemtest_0508_koc50~        138          185        64525.        22563.  1461
-```
 
+```{r summarise, echo=TRUE, message=FALSE}
 
-
-```r
 # group table by the receptor subbasin ID, and calculate the fraction of SOLPST_IN and SORPST_IN from each source subbasin.
 receptor_pcts <- src.df %>% 
   group_by(receptor_sub) %>%
@@ -50,17 +55,6 @@ filter(receptor_pcts, receptor_sub == 184) %>%
   select(source_sub, receptor_sub, avg_solpst_in, solpst_pct)
 ```
 
-```
-## # A tibble: 4 x 4
-## # Groups:   receptor_sub [1]
-##   source_sub receptor_sub avg_solpst_in solpst_pct
-##        <dbl>        <dbl>         <dbl>      <dbl>
-## 1        138          184       109707.     0.0904
-## 2        148          184       166976.     0.138 
-## 3        149          184       308005.     0.254 
-## 4        167          184       628559.     0.518
-```
-
 
 
 
@@ -68,8 +62,8 @@ This example shows the concept but not the full picure, as because we only have 
 
 It's possible to map these results:
 
+```{r map, echo=TRUE, message=FALSE}
 
-```r
 # read in shapefiles
 
 # read in subbasin sf and rivers sf
@@ -88,7 +82,7 @@ receptor_pcts.sf <- subs.sf %>%
 
 # sf tables for receptor 184 and its source subbasin
 
-# sources
+# sourcees
 src_subs.sf <- filter(receptor_pcts.sf, receptor_sub == 184)
 # source and receptor labels
 src_subs_labs.sf <- subs.sf %>% 
@@ -127,6 +121,5 @@ ggplot() +
         axis.title = element_blank(),
         legend.text = element_text(size = 7)) +
   labs(title = paste0("Soluble chemical source % for subbasin ", 184), col = "")
-```
 
-![](README_files/figure-html/map-1.png)<!-- -->
+```

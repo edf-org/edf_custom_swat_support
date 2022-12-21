@@ -30,22 +30,24 @@ rivs.sf <- st_read("data/spatial/riv1/riv1.shp") %>%
 
 # Analyse data ---------------------------------------------------------------
 
+# group table by the receptor subbasin ID, and calculate the fraction of SOLPST_IN and SORPST_IN from each source subbasin.
 receptor_pcts <- src.df %>% 
   group_by(receptor_sub) %>%
   mutate(solpst_pct = avg_solpst_in / sum(avg_solpst_in),
-            sorpst_pct = avg_sorpst_in / sum(avg_sorpst_in)) %>% 
+         sorpst_pct = avg_sorpst_in / sum(avg_sorpst_in)) %>% 
   arrange(receptor_sub)
 
-receptor_pcts %>% group_by(receptor_sub) %>% summarise(total = sum(solpst_pct)) %>% filter(total!=1)
-receptor_pcts %>% filter(source_sub == receptor_sub)
-
+# create a receptor sf table by joining to subbasin file
 receptor_pcts.sf <- subs.sf %>% 
   inner_join(receptor_pcts, by = c("subbasin" = "source_sub")) %>% 
   arrange(receptor_sub)
 
+# count how many source subbasins we have per receptor
+# (this will be low for most as only 4 source subbasins in this data)
 receptor_pcts %>% count(receptor_sub) %>% arrange(desc(n))
 
-c(src_subs.sf$subbasin, 184)
+
+# Create map --------------------------------------------------------------
 
 # list of receptor subbains
 receptor_subs <- distinct(receptor_pcts, receptor_sub)
@@ -54,7 +56,7 @@ for (rec_sub in receptor_subs$receptor_sub){
   
   # create sf tables for receptor
   
-  # sourcees
+  # sources
   src_subs.sf <- filter(receptor_pcts.sf, receptor_sub == rec_sub)
   # source and receptor labels
   src_subs_labs.sf <- subs.sf %>% 
@@ -95,56 +97,8 @@ for (rec_sub in receptor_subs$receptor_sub){
     # guides(colour = guide_legend(ncol = 3, byrow = TRUE)) +
     labs(title = paste0("Soluble chemical source % for subbasin ", rec_sub), col = "")
   
+  # save
   ggsave(paste0("figs/map - soluble chemical source pct by subbasin - receptor ", rec_sub, ".png"), 
          m1, units = "cm", height = 25, width = 20)
 }
 
-brewer.pal(8,"Blues")
-pal <- colorRampPalette(rev(brewer.pal(7, "YlGnBu")))(10)
-
-
-
-rec_sub = 184
-
-src_subs.sf <- filter(receptor_pcts.sf, receptor_sub == rec_sub)
-# source and receptor labels
-src_subs_labs.sf <- subs.sf %>% 
-  filter(subbasin %in% c(src_subs.sf$subbasin, rec_sub)) %>% 
-  st_centroid()
-# receptor 
-rec_subs.sf <- filter(subs.sf, subbasin == rec_sub)
-
-# MAP
-
-m1 <- ggplot() +
-  geom_sf(data = src_subs.sf,
-          aes(fill = solpst_pct), 
-          lwd = .3) +
-  geom_sf(data = rec_subs.sf, 
-          fill = NA, 
-          aes(col = "receptor subbasin"), 
-          lwd = 1) +
-  
-  scale_fill_distiller(palette = "YlGnBu", 
-                       direction = 1, 
-                       breaks = seq(0, 1, 0.2), 
-                       limits = c(0, 1), 
-                       labels = scales::percent) + 
-  
-  geom_sf_text(data = src_subs_labs.sf, 
-               aes(label = subbasin), 
-               col = "black",
-               size = 3, 
-               alpha = .5) +
-  
-  coord_sf(datum = NA) +
-  theme_edf() +
-  theme(legend.position = "right",
-        legend.title = element_text(vjust = -1) +
-        legend.text = element_text(size=7),
-        legend.spacing.y = unit(0.1, "cm"),
-        axis.title = element_blank()) +
-  # guides(colour = guide_legend(ncol = 3, byrow = TRUE)) +
-  labs(title = paste0("Soluble chemical source % for subbasin ", rec_sub), col = "")
-
-m1
