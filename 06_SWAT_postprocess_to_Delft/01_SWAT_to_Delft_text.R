@@ -31,24 +31,27 @@ yield.df <- read_csv("data/delft3d_inputs_SWAT_local_wyld_20050101_20141231.csv"
   select(subbasin, datestamp, value = local_water_yield_cms) %>% 
   mutate(metric = "local_water_yield_cms")
 
+# combine SWAT inputs into single narrow table
 swat.df <- bind_rows(discharge.df, yield.df)
 
-# edit these to requirements
+
+# EDIT THESE FIELDS TO MATCH REQUIREMENTS!!
 
 date_min <- ymd(20080815)
 date_max <- ymd(20080930)
 subbasins <- c(215,  225,  236,  239,  252,  242,  231,  240,  270,  285,  286,  253,  210)
 
 
+# USE THIS TO DEFINE A MANUAL ORDER FOR THE SUBBASINS IF THIS IS REQUIRED
+# keep this field in, if order doesn't matter just keep the same as subbasins above
+subbasin_order <- c(215,  225,  252,  242,  231,  285,  286,  253,  210,  239,  270,  240, 236)
+
+# define name for output .dis file - this will be saved in /output (note - no need for .dis here)
+output_fname <- "test_lpt_20080815_discharge_yield"
+
 # Dis file header text  ---------------------------------------------------------------
 
 # read.table("data/example_discharge/lpt.dis", nrows = 50)
-
-# The .dis file is weird.. It's a number of repeating sections per subbasin, with a 
-# section each for discharge and yeild. 
-# Each section has its own header describing the data below it.
-# This script simply loops through each subbasin in the input SWAT data, edits the 
-# dynamic fields in the header text
 
 # header text
 
@@ -76,21 +79,25 @@ c(hL1Append(1),
 
 # Filter SWAT data to reqs ------------------------------------------------
 
-# create SWAT discharge table
+# create a table of just the SWAT data to transform into .dis format
 discharge_write <- filter(swat.df,
                           datestamp >= date_min,
                           datestamp <= date_max,
                           subbasin %in% subbasins)
+  
 
-
+# check n subbasins and n days in the data to transform matches the requirements
 distinct(discharge_write, subbasin) %>% nrow() == length(subbasins)
 distinct(discharge_write, datestamp) %>% nrow() == length(seq(date_min, date_max, "day"))
 
 
 # Replicate .dis format ----------------------------------------------------
 
+# the two metrics to be output
 metrics <- c("flow_out_cms", "local_water_yield_cms")
-ref_time <- min(swat.df$datestamp)
+# reference time (for the header) is the minimum date in the input data
+# this is used to calculate the time field for the .dis file which is minutes from reference time
+ref_time <- min(discharge_write$datestamp)
 
 # output vector and counter
 vec_out <- c()
@@ -110,7 +117,12 @@ for (m in metrics){
     yield_char = "Y"
   }
   
-  for (s in subbasins){
+  if(length(subbasins) != length(subbasin_order)){
+    print("WARNING - the number of subbasins required doesn't the number in the order list. Correct and re-run")
+    break
+  }
+  
+  for (s in subbasin_order){
     
     # filter extract table to just metric subbasin in loop
     df_subbasin <- filter(swat.df, 
@@ -146,7 +158,7 @@ for (m in metrics){
       
     }
     
-    #     append formatted df_subbasin data to vec_out
+    # append formatted df_subbasin data to vec_out
     vec_out <- append(vec_out, vec_sub_text_lines)
     
     table_counter <- table_counter + 1
@@ -155,7 +167,6 @@ for (m in metrics){
 
 
 
-
-fileConn<-file("output/test_lpt_1.2_discharge_yield.dis")
+fileConn<-file(paste0("output/", output_fname, ".dis"))
 writeLines(vec_out, fileConn)
 close(fileConn)
