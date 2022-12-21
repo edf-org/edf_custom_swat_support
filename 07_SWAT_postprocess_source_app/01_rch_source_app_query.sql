@@ -6,6 +6,7 @@ SELECT
 	avg(SOLPST_IN) as avg_solpst_in,
 	avg(SORPST_IN) as avg_sorpst_in,
 	count(*) as count
+    
 FROM `edf-aq-data.healthy_gulf.SWAT_output_rch` 
 
 -- limit to daily chemtest runs
