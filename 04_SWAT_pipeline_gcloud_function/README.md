@@ -147,5 +147,5 @@ git clone "https://github.com/edf-org/edf_custom_swat_support/02_gcloud_script"
 After making any edits the script can be deployed back to gcloud with the following command (when the current directory is the one to be uploaded):
 
 ```r
-gcloud functions deploy swat_load_bq --runtime python37 --trigger-resource healthy_gulf --trigger-event google.storage.object.finalize
+gcloud functions deploy swat_load_bq --entry-point bq_load --runtime python37 --trigger-resource healthy_gulf --trigger-event google.storage.object.finalize
 ```

@@ -59,6 +59,8 @@ def format_rch(df, model_period, cio_dict):
         
         try:
             # create array of year values to match date sequence in daily file
+            print(cio_dict['start'])
+            print(cio_dict['end'])
             y_arr = [i for i in pd.date_range(start = cio_dict['start'], end = cio_dict['end'], freq = 'D').year for k in range(0, (cfg.unique_locations['rch']))]
             df['year'] = y_arr
     

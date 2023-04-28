@@ -6,7 +6,7 @@ unique_locations = {'rsv' : 4,
                     'rch' : 332,
                     'sed' : 332,
                     'vel' : 1,
-                    'hru' : 2169,
+                    'hru' : 3100,
                     'sub' : 332}
 
 

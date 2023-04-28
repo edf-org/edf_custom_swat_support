@@ -25,12 +25,12 @@ def write_to_tmp(bucket_nm, file_path):
 
     storage_client = storage.Client()
     
-    tmp_path = '/tmp/' + file_path.split('/')[-1]
+    tmp_path = './tmp/' + file_path.split('/')[-1]
     
     bucket = storage_client.get_bucket(bucket_nm)
     blob = bucket.blob(file_path)
     blob.download_to_filename(tmp_path)
-    
+    print(tmp_path)
     return tmp_path
 
 
@@ -320,7 +320,7 @@ def read_SWAT_pst(fpath):
 
 
 
-def bq_load(event, context):
+def bq_load(event, context=None):
     """Background Cloud Function to be triggered by Cloud Storage.
        This generic function logs relevant data when a file is changed.
 
@@ -333,11 +333,11 @@ def bq_load(event, context):
     Returns:
         None; the output is written to Stackdriver Logging
     """
-
+    
     # tracemalloc.start()
 
     print("File '{}' loaded into bucket".format(event['name']))
-    clear_folder('/tmp/')
+    clear_folder('./tmp/')
 
     # extract file type from name
     ftype = event['name'].split('.')[-1]
@@ -364,6 +364,7 @@ def bq_load(event, context):
             # try reading in file.cio
             try:
                 path_cio = os.path.split(event['name'])[0] + '/file.cio'
+                print(path_cio)
                 temp_cio = write_to_tmp(event['bucket'], path_cio)
                 cio_dict = read_cio(temp_cio)
                 
@@ -373,7 +374,7 @@ def bq_load(event, context):
 
             # write file to temp location and read
             tmp_path = write_to_tmp(event['bucket'], event['name'])
-
+            print(tmp_path)
             # current, peak = tracemalloc.get_traced_memory()
             # print(f"Written output to tmp, memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
 
@@ -419,7 +420,7 @@ def bq_load(event, context):
                 # print(f"Pushed output to BQ, memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
 
             # clear out tmp directory
-            clear_folder('/tmp/')
+            clear_folder('./tmp/')
             # del df
             gc.collect()
 
@@ -437,3 +438,6 @@ def bq_load(event, context):
 
     # tracemalloc.stop()
  
+myevent = {'name':r'SWAT_outputs/FromYr2006_ToYr2008_Sub193_Chem235_LuSUPR-UIDU_daily/output.rch','bucket':'healthy_gulf'}
+ 
+bq_load(myevent)
