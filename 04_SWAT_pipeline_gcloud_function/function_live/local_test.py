@@ -58,7 +58,9 @@ def push_to_bq(df, dataset_nm, table_nm):
     Returns:
         None; the number of rows uploaded is printed
     """
-    
+    print(table_nm)
+    print(df.columns)
+    print(df.head())
     bq_client = bigquery.Client()
     
     job_config = bigquery.LoadJobConfig()
@@ -133,6 +135,51 @@ def read_SWAT(fpath):
     if (ftype in cfg.file_cut):
         df = df.iloc[:, 1:]
          
+    # add in column headers
+    try:
+        df.columns = header_values
+
+    except ValueError:
+        print("n columns in output file {} does not match n columns in 'file_metadata_headers.csv'".format(fpath))
+        raise
+        
+    return df
+
+def read_SWAT_rch(fpath):
+    # used for debugging only
+    # read in meta data to help read output files
+    file_headers = pd.read_csv(write_to_tmp("healthy_gulf", "SWAT_outputs/file_metadata_headers.csv"))
+
+    # pull file type from the filename
+    ftype = fpath.split('.')[-1]
+
+    # extract the headers list and line skip info from the metadata files
+    try:
+        header_values = file_headers[ftype][~file_headers[ftype].isnull()].values
+        skip_value = 8
+
+    except KeyError:
+        print("File type .{} not found in 'file_metadata_....csv' file".format(ftype))
+        raise
+    
+    # read file
+    nfloats = len(header_values)-3
+    c = 27
+    fwf = [(6,12),(12,21),(21,c)]+[(i,i+12) for i in range(c,c+12*nfloats,12)]
+    dtypes = {0: np.int64, 1: np.int64, 2: np.int64, 3: np.float64, 4: np.float64, 5: np.float64, 6: np.float64, 7: np.float64, 8: np.float64,  9: np.float64, 10: np.float64, 11: np.float64, 12: np.float64, 13: np.float64, 14: np.float64, 15: np.float64,  16: np.float64,  17: np.float64,  18: np.float64}
+    print(fwf)
+    df = pd.read_fwf(fpath,colspecs=fwf,skiprows=skip_value)#, dtype=dtypes)
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        df.loc[df[col].isna()] = 0.0
+        
+    #df = pd.read_fwf(fpath, skiprows = skip_value, header = None, infer_nrows=100000) 
+    # cut off useless column for rsv, rch, sed and sub files
+    #if (ftype in cfg.file_cut):
+    #    df = df.iloc[:, 1:]
+    print(header_values)
+    print(df.columns)
+    print(df.dtypes)
     # add in column headers
     try:
         df.columns = header_values
@@ -391,6 +438,10 @@ def bq_load(event, context=None):
                 print('running pst read')
                 df = read_SWAT_pst(tmp_path)
             
+            #elif (ftype == 'rch'):
+            #    print('running rch read')
+            #    df = read_SWAT_rch(tmp_path)
+            
             else:
                 print('running standard read')
                 df = read_SWAT(tmp_path)
@@ -438,6 +489,6 @@ def bq_load(event, context=None):
 
     # tracemalloc.stop()
  
-myevent = {'name':r'SWAT_outputs/FromYr2006_ToYr2008_Sub193_Chem235_LuSUPR-UIDU_daily/output.rch','bucket':'healthy_gulf'}
+myevent = {'name':r'SWAT_outputs/Observed_v2_FromYr2004_ToYr2006_Chem236_LuSUPR-UIDU_daily/output.rch','bucket':'healthy_gulf'}
  
 bq_load(myevent)
