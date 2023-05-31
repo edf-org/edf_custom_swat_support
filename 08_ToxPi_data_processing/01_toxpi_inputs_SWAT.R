@@ -1,14 +1,14 @@
 ## Purpose of script: 
-## Transform the shapefile SWAT outputs into raster and save as csv
+## Transform the gpkg SWAT outputs into raster and save as csv
 ## 
 ## Author: Greg Slater 
-##
-## Date Created: 2022-10-26
+## Modified by: Alex Adame
+## Date Created: 2022-10-26 Updated: 2023-05-31
 
 
 ## load up packages
 
-pacman::p_load(tidyverse, lubridate, stars, sf)
+pacman::p_load(tidyverse, lubridate, stars, sf) 
 
 source("src/edf_theme.r")
 source("src/functions.r")
@@ -18,31 +18,32 @@ source("src/functions.r")
 # raster template
 rt <- read_stars("data/raster_template/raster_template.tif")
 
-# SWAT data
-bfull <- st_read("data/ToxPi_inputs/SWAT/SWAT_bankfull_duration_floodplain_clip/SWAT_bankfull_duration_floodplain_clip.shp") %>%
-  rename(event_duration_days = bquxjob_5f,
-         max_event_duration_days = bquxjob__1)
-
+# SWAT data (gpkg to save full colnames)
+swat_data <- st_read("data/ToxPi_inputs/SWAT/subbasins_chem_20050101_20201231.gpkg", "subbasins_chem_data")
 
 # PROCESSING --------------------------------------------------------------
+# select all data matching 'chemconc' in col name
+swat_chem_cols <- swat_data %>% select(all_of(matches('chemconc')))
 
-# process to raster for: event_duration_days
-bfull_days.rt <- sf_to_raster(bfull, "event_duration_days", rt)
-bfull_days.df <- raster_to_df(bfull_days.rt)
+# rasterize and export each variable to a tif file
+swat_chem.rt <- list()
 
-# process to raster for: max_event_duration_days
-bfull_days_max.rt <- sf_to_raster(bfull, "max_event_duration_days", rt)
-bfull_max.df <- raster_to_df(bfull_days_max.rt)
+for (i in colnames(swat_chem_cols)){
+    swat_chem.rt[[i]] <- sf_to_raster(swat_data, i, rt)
+    filename = paste("output/ToxPi_inputs_processed/SWAT/",i,".tif", sep = "")
+    write_stars(swat_chem.rt[[i]], filename)
+}
 
-# output both rasters
-write_stars(bfull_days.rt, "output/ToxPi_inputs_processed/SWAT/bankfull_event_duration_days.tif")
-write_stars(bfull_days_max.rt, "output/ToxPi_inputs_processed/SWAT/bankfull_event_duration_days_max.tif")
+# create df from raster with all variables
+templist = list()
 
-nrow(bfull_days.df) == nrow(bfull_max.df)
+for (i in names(swat_chem.rt)){
+    output = raster_to_df(swat_chem.rt[[i]])
+    templist[["cell_id"]] = output$cell_id
+    templist[[i]] = output$value
+}
+swat_chem.df = data.frame(templist)
+swat_chem.df <- subset(swat_chem.df, select = -c(geom)) #drop geom col
 
-# create df with both vars and write
-df_comb <- data.frame(cell_id = bfull_days.df$cell_id,
-                      event_duration_days = bfull_days.df$value,
-                      max_event_duration_days = bfull_max.df$value)
-
-write_csv(df_comb %>% drop_na(), "output/ToxPi_inputs_processed/SWAT/bankfull_event_duration.csv")
+# write df to csv
+write_csv(df %>% drop_na(), "output/ToxPi_inputs_processed/SWAT/chem_conc.csv")
