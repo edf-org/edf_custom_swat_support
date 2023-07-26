@@ -21,13 +21,13 @@ theme_set(theme_edf())
 
 # This section should be edited to point at SWAT data and set datetime ranges and subbasins
 
-# SWAT discharge output
-discharge.df <- read_csv("data/delft3d_inputs_SWAT_total_discharge_20050101_20141231.csv") %>% 
+# SWAT discharge output - interior conditions
+discharge.df <- read_csv("data/delft3d_inputs_SWAT_total_discharge_20050101_20201231.csv") %>% 
   select(subbasin, datestamp, value = flow_out_cms) %>% 
   mutate(metric = "flow_out_cms")
 
-# SWAT yeild data
-yield.df <- read_csv("data/delft3d_inputs_SWAT_local_wyld_20050101_20141231.csv") %>% 
+# SWAT yield data - boundary conditions
+yield.df <- read_csv("data/delft3d_inputs_SWAT_local_wyld_20050101_20201231.csv") %>% 
   select(subbasin, datestamp, value = local_water_yield_cms) %>% 
   mutate(metric = "local_water_yield_cms")
 
@@ -37,17 +37,17 @@ swat.df <- bind_rows(discharge.df, yield.df)
 
 # EDIT THESE FIELDS TO MATCH REQUIREMENTS!!
 
-date_min <- ymd(20080815)
-date_max <- ymd(20080930)
-subbasins <- c(215,  225,  236,  239,  252,  242,  231,  240,  270,  285,  286,  253,  210)
+date_min <- ymd(20170101)
+date_max <- ymd(20171231)
+subbasins <- c(210, 211, 215, 225, 231, 236, 239, 240, 242, 252, 253, 270, 281, 282, 285, 286)
 
 
 # USE THIS TO DEFINE A MANUAL ORDER FOR THE SUBBASINS IF THIS IS REQUIRED
 # keep this field in, if order doesn't matter just keep the same as subbasins above
-subbasin_order <- c(215,  225,  252,  242,  231,  285,  286,  253,  210,  239,  270,  240, 236)
+subbasin_order <- subbasins
 
 # define name for output .dis file - this will be saved in /output (note - no need for .dis here)
-output_fname <- "test_lpt_20080815_discharge_yield"
+output_fname <- "laporte_2017"
 
 # Dis file header text  ---------------------------------------------------------------
 
@@ -115,6 +115,7 @@ for (m in metrics){
     yield_char = ""
   } else {
     yield_char = "Y"
+    subbasin_order = subbasins
   }
   
   if(length(subbasins) != length(subbasin_order)){

@@ -46,4 +46,4 @@ swat_chem.df = data.frame(templist)
 swat_chem.df <- subset(swat_chem.df, select = -c(geom)) #drop geom col
 
 # write df to csv
-write_csv(df %>% drop_na(), "output/ToxPi_inputs_processed/SWAT/chem_conc.csv")
+write_csv(swat_chem.df %>% drop_na(), "output/ToxPi_inputs_processed/SWAT/chem_conc.csv")

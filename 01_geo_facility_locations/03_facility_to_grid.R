@@ -21,7 +21,7 @@ theme_set(theme_edf())
 # DATA IN ---------------------------------------------------------------
 
 # Lauren's facility to parcel lookup
-f_parc <- read_csv("output/facilities/facility_parcel_lookup_2022-12-13.csv")
+f_parc <- read_csv("output/facilities/facility_parcel_lookup_2023_17_07.csv")
 
 nrow(f_parc)
 head(f_parc)
@@ -31,7 +31,7 @@ rt <- read_stars("data/raster_template/raster_template.tif")
 
 # read in parcels shapefile - these are the parcels identified in the facility > parcel lookup file
 # (this was created by joining the csv in QGIS and exporting only joined parcels, to save reading full file in here)
-parcels_sf <- st_read("output/parcels/parcels_lookup_only_20221213.gpkg") %>%
+parcels_sf <- st_read("output/parcels/parcels_lookup_only_2022-12-13.gpkg") %>%
   st_transform(6587)
 
 glimpse(parcels_sf)
@@ -162,7 +162,7 @@ f_parc_grid_sf %>%
 
 # note - this takes a few minutes to run
 f_parc_grid_dissolved_sf <- f_parc_grid_sf %>% 
-  select(-c(fac_src, note, geo_id_revised, parcel_area_grid)) %>%
+  select(-c(note, geo_id_revised, parcel_area_grid)) %>%
   group_by(registry_stone_id, grid_id, uncertainty_class) %>% 
   summarize() 
 
