@@ -24,7 +24,7 @@ rt <- read_stars("data/raster_template/raster_template.tif")
 # PROCESSING --------------------------------------------------------------
 
 # directory with Ecosystem data
-dir_in <- "C:/Users/gslater/OneDrive - Environmental Defense Fund - edf.org/GCA Work/edf_custom_swat_support/08_ToxPi_data_processing/data/ToxPi_inputs/Costing_nature/"
+dir_in <- "C:/Users/aadame/OneDrive - Environmental Defense Fund - edf.org/Documents/edf_custom_swat_support/08_ToxPi_data_processing/data/ToxPi_inputs/Costing_nature/"
 
 # directory for ouputs
 dir_out <- "output/ToxPi_inputs_processed/Ecosystem/"

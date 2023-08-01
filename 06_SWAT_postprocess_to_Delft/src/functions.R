@@ -50,7 +50,7 @@ hL3Append <- function(num, yield_char){
 # append start date of data to header line 5
 hL5Append <- function(ref_time){
   
-  str_flatten(c(header_lines[5], format(ref_time, "%Y%M%d")))
+  str_flatten(c(header_lines[5], format(ref_time, "%Y%m%d")))
 }
 
 

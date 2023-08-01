@@ -19,8 +19,8 @@ theme_set(theme_edf())
 # DATA IN ---------------------------------------------------------------
 
 # all facilities data
-fac_all.df <- read_csv("output/facilities/facilities_all_coded_2022-12-08.csv", guess_max = 2000) %>% 
-  rename(registry_id = REGISTRY_ID)
+fac_all.df <- read_csv("data/facilities/PROGbyFRS_uniq_051223_all_locations_V2.csv", guess_max = 2000) %>% 
+  rename(registry_id = REGISTRY_ID, Latitude = Best_Latitude83, Longitude = Best_Longitude83)
 
 nrow(fac_all.df)
 
@@ -28,7 +28,7 @@ fac_all.sf <- fac_all.df %>%
   filter(!is.na(Latitude)) %>% 
   st_as_sf(coords = c('Longitude', 'Latitude'), crs=4326) %>% 
   st_transform(6587) %>% 
-  select(registry_id, fac_src)
+  select(registry_id)
 
 
 # parcels data - limited (in QGIS) to just those within 100m of facilities, or with industrial land use
@@ -100,7 +100,7 @@ distinct(class_123_min, registry_id) %>%
 
 # count results
 class_123_min %>% 
-  group_by(fac_src, uncertainty_class) %>% 
+  group_by(uncertainty_class) %>% 
   summarise(facilities = n_distinct(registry_id), 
             parcels = n_distinct(Stone_Unique_ID_revised))
 
@@ -127,7 +127,7 @@ class_4 <- fac_all.sf %>%
 
 # count results
 class_4 %>% 
-  group_by(fac_src, uncertainty_class) %>% 
+  group_by(uncertainty_class) %>% 
   summarise(facilities = n_distinct(registry_id), 
             parcels = n_distinct(Stone_Unique_ID_revised))
 
@@ -145,7 +145,6 @@ class_5 <- parc.df %>%
   anti_join(class_1234 %>% distinct(Stone_Unique_ID_revised),
             by = "Stone_Unique_ID_revised") %>% 
   mutate(registry_id = NA,
-         fac_src = NA,
          uncertainty_class = 5)
   
 
@@ -188,19 +187,21 @@ f_parc %>%
 # check records which don't match between new process and Lauren's original lookup
 
 # in new but not in old
-new_not_old <- class_all %>% 
-  filter(fac_src == "facilities_20220311.csv" | is.na(fac_src)) %>% 
-  anti_join(f_parc, by = c("registry_stone_id", "uncertainty_class")) #%>% 
+
+#new_not_old <- class_all %>% 
+  #filter(fac_src == "facilities_20220311.csv" | is.na(fac_src)) %>% 
+  #anti_join(f_parc, by = c("registry_stone_id", "uncertainty_class")) #%>% 
   # count(uncertainty_class, stat_land_comb)
 
 # write_csv(new_not_old, "output/facilities/facility_parcel_lookup_new_not_old.csv")
 
 # in old but not in new
-old_not_new <- f_parc %>% 
-  anti_join(class_all, by = c("registry_stone_id", "uncertainty_class")) %>% 
-  group_by(uncertainty_class) %>% 
-  count(uncertainty_class)
+
+#old_not_new <- f_parc %>% 
+  #anti_join(class_all, by = c("registry_stone_id", "uncertainty_class")) %>% 
+  #group_by(uncertainty_class) %>% 
+  #count(uncertainty_class)
   # summarise(parcels = n_distinct(Stone_Unique_ID_revised)) %>% copyExcel()
 
-# write_csv(old_not_new, "output/facilities/facility_parcel_lookup_old_not_new.csv")
+write_csv(f_parc, "output/facilities/facility_parcel_lookup_2023_17_07.csv")
 

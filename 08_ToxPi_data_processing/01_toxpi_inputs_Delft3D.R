@@ -24,7 +24,7 @@ rt <- read_stars("data/raster_template/raster_template.tif")
 # PROCESSING --------------------------------------------------------------
 
 # Directory with Delft data (masked)
-dir_in <- "C:/Users/gslater/OneDrive - Environmental Defense Fund - edf.org/GCA Work/edf_custom_swat_support/08_ToxPi_data_processing/data/ToxPi_inputs/Delft3D"
+dir_in <- "C:/Users/aadame/OneDrive - Environmental Defense Fund - edf.org/Documents/edf_custom_swat_support/08_ToxPi_data_processing/data/ToxPi_inputs/Delft3D"
 
 # list of masked files
 f_names <- list.files(path=dir_in, pattern='_mask.tif', full.names = TRUE) 
